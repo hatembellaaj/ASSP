@@ -31,6 +31,8 @@ services:
       SEED_ON_START: ${SEED_ON_START:-false}
     ports:
       - "${BACKEND_PORT:-18401}:4000"
+    volumes:
+      - mouvplus_uploads:/app/uploads
 
   frontend:
     build:
@@ -45,3 +47,4 @@ services:
 
 volumes:
   mouvplus_pgdata:
+  mouvplus_uploads:

@@ -22,6 +22,7 @@ import roadmapRoutes from "./routes/roadmap";
 import dashboardRoutes from "./routes/dashboard";
 import conseillerRoutes from "./routes/conseiller";
 import notificationRoutes from "./routes/notifications";
+import { UPLOAD_DIR } from "./utils/uploads";
 
 const app = express();
 
@@ -29,6 +30,9 @@ app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
 app.use(express.json({ limit: "5mb" }));
 app.use(morgan("dev"));
+
+// Fichiers médias uploadés (photos/vidéos de la Communauté)
+app.use("/api/uploads", express.static(UPLOAD_DIR));
 
 app.get("/api/health-check", (_req, res) => res.json({ ok: true, service: "mouvplus-backend" }));
 

@@ -1,12 +1,48 @@
 import { Router } from "express";
 import { eq, desc, asc, and } from "drizzle-orm";
+import multer from "multer";
+import path from "path";
+import { randomUUID } from "crypto";
 import { db, newId } from "../db";
 import { posts, comments, likes, users } from "../db/schema";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { alias } from "drizzle-orm/pg-core";
+import { UPLOAD_DIR } from "../utils/uploads";
 
 const router = Router();
 const commentAuthorAlias = alias(users, "comment_author");
+
+// ---------- Upload de médias (photos / vidéos) ----------
+const ALLOWED_MIME: Record<string, "PHOTO" | "VIDEO"> = {
+  "image/jpeg": "PHOTO",
+  "image/png": "PHOTO",
+  "image/webp": "PHOTO",
+  "image/gif": "PHOTO",
+  "video/mp4": "VIDEO",
+  "video/webm": "VIDEO",
+  "video/quicktime": "VIDEO",
+};
+
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (_req, _file, cb) => cb(null, UPLOAD_DIR),
+    filename: (_req, file, cb) => cb(null, `${randomUUID()}${path.extname(file.originalname).toLowerCase()}`),
+  }),
+  limits: { fileSize: 50 * 1024 * 1024 }, // 50 Mo max
+  fileFilter: (_req, file, cb) => {
+    if (ALLOWED_MIME[file.mimetype]) return cb(null, true);
+    cb(new Error("Type de fichier non supporté (photos ou vidéos uniquement)"));
+  },
+});
+
+router.post("/upload", requireAuth, (req, res) => {
+  upload.single("file")(req, res, (err: any) => {
+    if (err) return res.status(400).json({ error: err.message || "Échec de l'envoi du fichier" });
+    if (!req.file) return res.status(400).json({ error: "Aucun fichier reçu" });
+    const mediaType = ALLOWED_MIME[req.file.mimetype];
+    res.status(201).json({ mediaType, mediaUrl: `/api/uploads/${req.file.filename}` });
+  });
+});
 
 router.get("/posts", requireAuth, async (_req, res) => {
   const postRows = await db
