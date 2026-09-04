@@ -30,7 +30,7 @@ services:
       JITSI_DOMAIN: ${JITSI_DOMAIN:-meet.jit.si}
       SEED_ON_START: ${SEED_ON_START:-false}
     ports:
-      - "${BACKEND_PORT:-4000}:4000"
+      - "${BACKEND_PORT:-18401}:4000"
 
   frontend:
     build:
@@ -41,7 +41,7 @@ services:
     depends_on:
       - backend
     ports:
-      - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_PORT:-18400}:80"
 
 volumes:
   mouvplus_pgdata:

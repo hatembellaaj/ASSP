@@ -46,8 +46,10 @@ docker compose exec backend npx tsx src/db/seed.ts
 (ou passez `SEED_ON_START=true` dans `.env` avant le tout premier `docker compose up`, puis repassez-le à
 `false` pour les démarrages suivants afin de ne pas ré-écraser vos données).
 
-L'application est alors disponible sur `http://votre-serveur/` (port 80 par défaut, `FRONTEND_PORT` dans
-`.env` pour changer), l'API sur `http://votre-serveur:4000/api` (`BACKEND_PORT`).
+L'application est alors disponible sur `http://votre-serveur:18400/` (`FRONTEND_PORT` dans `.env` pour
+changer), l'API sur `http://votre-serveur:18401/api` (`BACKEND_PORT`). Ces ports par défaut ont été choisis
+pour ne pas entrer en conflit avec d'autres conteneurs déjà présents sur un serveur partagé — vérifiez avec
+`sudo docker ps` et ajustez `BACKEND_PORT`/`FRONTEND_PORT` dans `.env` si l'un d'eux est déjà pris.
 
 ### Comptes de démonstration (après seed)
 
