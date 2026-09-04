@@ -8,6 +8,25 @@ import { fr } from "date-fns/locale";
 
 const WEEKDAYS = ["LUN", "MAR", "MER", "JEU", "VEN", "SAM", "DIM"];
 
+const DAY_STATUS_COLORS: Record<string, string> = {
+  LIBRE: "#10b981",
+  PLANIFIEE: "#f59e0b",
+  IMMINENTE: "#eab308",
+  EFFECTUEE: "#3b82f6",
+  A_CONFIRMER: "#f59e0b",
+  EN_RETARD: "#f43f5e",
+  ANNULEE: "#94a3b8",
+};
+
+const LEGEND_ITEMS: { label: string; color: string }[] = [
+  { label: "Libre", color: DAY_STATUS_COLORS.LIBRE },
+  { label: "Planifiée", color: DAY_STATUS_COLORS.PLANIFIEE },
+  { label: "Groupe", color: "#a855f7" },
+  { label: "Imminente", color: DAY_STATUS_COLORS.IMMINENTE },
+  { label: "Effectuée", color: DAY_STATUS_COLORS.EFFECTUEE },
+  { label: "En retard >1h", color: DAY_STATUS_COLORS.EN_RETARD },
+];
+
 export default function CalendarPage() {
   const [cursor, setCursor] = useState(new Date());
   const [selected, setSelected] = useState<string | null>(null);
@@ -74,13 +93,29 @@ export default function CalendarPage() {
                 >
                   {d && <div className="font-medium text-slate-700">{d}</div>}
                   {hasSession && (
-                    <div className="mt-1 truncate rounded bg-brand-100 px-1 py-0.5 text-[10px] text-brand-700">
+                    <div
+                      className="mt-1 truncate rounded px-1 py-0.5 text-[10px] font-medium text-white"
+                      style={{
+                        backgroundColor:
+                          daySessions[0].type === "GROUPE"
+                            ? "#a855f7"
+                            : DAY_STATUS_COLORS[daySessions[0].status] || "#94a3b8",
+                      }}
+                    >
                       {format(new Date(daySessions[0].scheduledAt), "HH:mm")} · {daySessions[0].coach?.firstName}
                     </div>
                   )}
                 </button>
               );
             })}
+          </div>
+          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-1.5 border-t border-slate-100 pt-3 text-xs text-slate-500">
+            {LEGEND_ITEMS.map((item) => (
+              <div key={item.label} className="flex items-center gap-1.5">
+                <span className="h-2.5 w-2.5 rounded-full" style={{ backgroundColor: item.color }} />
+                {item.label}
+              </div>
+            ))}
           </div>
         </Card>
 

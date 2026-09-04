@@ -36,17 +36,78 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-brand-900 px-4">
-      <div className="grid w-full max-w-4xl overflow-hidden rounded-2xl bg-white shadow-xl md:grid-cols-2">
-        <div className="hidden flex-col justify-between bg-gradient-to-br from-brand-700 to-brand-900 p-8 text-white md:flex">
+    <div className="flex min-h-screen items-start justify-center bg-brand-900 px-4 py-8">
+      <div className="grid w-full max-w-5xl overflow-hidden rounded-2xl bg-white shadow-xl md:grid-cols-2">
+        <div className="hidden max-h-[calc(100vh-4rem)] flex-col gap-6 overflow-y-auto bg-gradient-to-br from-brand-700 to-brand-900 p-8 text-white md:flex">
           <div className="flex items-center gap-2 text-xl font-bold">🏃 MOUVPLUS</div>
+
           <div>
-            <h2 className="mb-2 text-2xl font-semibold">Bougez, progressez, restez vous-même.</h2>
+            <h2 className="mb-2 text-2xl font-semibold italic">Bougez, progressez, restez vous-même</h2>
             <p className="text-brand-100">
-              La plateforme de visioconférence et d'entraînement sportif dédiée aux séniors : coaching en direct,
-              suivi santé, communauté et clubs partenaires.
+              <span className="font-semibold text-white">Séances sportives pour seniors à partir de 50 ans.</span> Un
+              cycle de <span className="font-semibold text-white">12 séances personnalisées de 45 minutes</span>, en
+              ligne et en direct avec votre coach, pour progresser à votre rythme, où que vous soyez.
             </p>
           </div>
+
+          <div className="rounded-lg border border-white/20 bg-white/10 p-4 text-sm text-brand-50">
+            🏅🏅 Un coaching de haut niveau : notre coach a amené la Pauillacaise{" "}
+            <span className="font-semibold text-white">Annette Monnier</span> à la médaille d'argent aux
+            Championnats de France de Karaté Vétéran (mai 2026) et à la médaille d'or à la compétition de
+            Nouvelle-Aquitaine (février 2026).
+          </div>
+
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-lg bg-white/10 p-4">
+              <h3 className="text-sm font-semibold text-white">Niveau 1 : Réveil du Corps</h3>
+              <p className="mt-1 text-xs italic text-brand-100">
+                Pour les séniors avec problèmes d'autonomie, articulations ou manque d'énergie
+              </p>
+              <p className="mt-2 text-xs text-brand-100">
+                Cours de sport adapté aux séniors : problèmes d'autonomie, articulations, manque d'énergie. Des
+                séances douces et progressives pour retrouver mouvement et bien-être.
+              </p>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-brand-200">
+                Les bienfaits pour votre santé
+              </p>
+              <ul className="mt-1 space-y-1 text-xs text-brand-100">
+                <li>✓ Amélioration de la mobilité et de la souplesse</li>
+                <li>✓ Renforcement musculaire en douceur</li>
+                <li>✓ Soulagement des douleurs articulaires</li>
+                <li>✓ Retour à l'autonomie dans les gestes simples</li>
+                <li>✓ Prévention des chutes</li>
+              </ul>
+            </div>
+            <div className="rounded-lg bg-white/10 p-4">
+              <h3 className="text-sm font-semibold text-white">Niveau 2 : Reprise du Sport Séniors</h3>
+              <p className="mt-1 text-xs italic text-brand-100">
+                Pour les séniors actifs qui souhaitent reprendre le sport en toute sécurité
+              </p>
+              <p className="mt-2 text-xs text-brand-100">
+                Programme de remise en condition physique pour séniors actifs souhaitant reprendre le sport en toute
+                sécurité. Renforcement, gainage et équilibre pour progresser à son rythme.
+              </p>
+              <p className="mt-3 text-[11px] font-semibold uppercase tracking-wide text-brand-200">
+                Les bienfaits pour votre santé
+              </p>
+              <ul className="mt-1 space-y-1 text-xs text-brand-100">
+                <li>✓ Renforcement musculaire global</li>
+                <li>✓ Meilleur gainage, stabilité et équilibre</li>
+                <li>✓ Amélioration de l'équilibre et prévention des chutes</li>
+                <li>✓ Devenir plus fort et plus rapide dans les mouvements du quotidien</li>
+                <li>✓ Regain de confiance dans ses capacités physiques</li>
+              </ul>
+            </div>
+          </div>
+
+          <div className="border-t border-white/20 pt-4 text-center text-xs text-brand-100">
+            <p className="font-semibold text-white">Renseignements et inscriptions</p>
+            <p className="mt-1">Association des Sportifs Séniors de Pauillac — ASSP</p>
+            <p>Pauillac, Nouvelle-Aquitaine</p>
+            <p>Contact : Anne Fourgeaud</p>
+            <p className="mt-1 font-medium text-white">Tél. 07 83 74 66 56 · assp33@gmx.fr</p>
+          </div>
+
           <div className="text-xs text-brand-200">© {new Date().getFullYear()} MouvPlus</div>
         </div>
         <div className="p-8">

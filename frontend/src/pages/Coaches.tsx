@@ -13,7 +13,23 @@ export default function Coaches() {
     <div>
       <PageHeader title="Mes coachs" />
       <div className="p-8">
-        <p className="mb-4 text-sm text-slate-500">Choisissez un coach certifié pour vous accompagner.</p>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <p className="text-sm text-slate-500">Choisissez un coach certifié pour vous accompagner.</p>
+          <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-purple-500" /> 40% Progression clients
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-teal-500" /> 30% Avis utilisateurs
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-amber-500" /> 20% Régularité séances
+            </span>
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-rose-500" /> 10% Taux de rétention
+            </span>
+          </div>
+        </div>
         {isLoading && <Loading />}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {data?.map((coach: any) => (
