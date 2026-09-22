@@ -42,9 +42,27 @@ services:
     restart: unless-stopped
     depends_on:
       - backend
+    environment:
+      # Pris en compte par le reverse proxy jwilder/nginx-proxy + letsencrypt-companion
+      # déjà en place sur le serveur : il détecte ces variables et génère seul la
+      # configuration + le certificat HTTPS pour ce domaine.
+      VIRTUAL_HOST: ${DOMAIN:-mouvplus.com},www.${DOMAIN:-mouvplus.com}
+      LETSENCRYPT_HOST: ${DOMAIN:-mouvplus.com},www.${DOMAIN:-mouvplus.com}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-contact@mouvplus.com}
     ports:
       - "${FRONTEND_PORT:-18400}:80"
+    networks:
+      - default
+      - studyassur_app-network
 
 volumes:
   mouvplus_pgdata:
   mouvplus_uploads:
+
+networks:
+  default: {}
+  # Réseau du reverse proxy nginx-proxy déjà en place sur le serveur (voir
+  # `docker inspect nginx-proxy`) — on le rejoint pour que nginx-proxy puisse
+  # router mouvplus.com directement vers ce conteneur.
+  studyassur_app-network:
+    external: true
