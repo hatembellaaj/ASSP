@@ -5,13 +5,6 @@ import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui";
 import asspLogo from "../assets/assp-logo.png";
 
-const DEMO_ACCOUNTS = [
-  { role: "Programmateur", email: "admin@mouvplus.fr", password: "admin123" },
-  { role: "Entraîneur", email: "slim.abderrahim@mouvplus.fr", password: "coach123" },
-  { role: "Conseiller sportif", email: "conseiller@mouvplus.fr", password: "conseiller123" },
-  { role: "Adhérent", email: "hsan.soussou@mouvplus.fr", password: "membre123" },
-];
-
 // Palette reprise du flyer ASSP (couleurs échantillonnées directement sur le document d'origine)
 const NAVY = "#1a2530";
 const TEAL = "#3f5452";
@@ -206,25 +199,6 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6 border-t border-slate-100 pt-4">
-              <p className="mb-2 text-xs font-medium uppercase tracking-wide text-slate-400">Comptes de démonstration</p>
-              <div className="grid grid-cols-2 gap-2">
-                {DEMO_ACCOUNTS.map((acc) => (
-                  <button
-                    key={acc.email}
-                    type="button"
-                    onClick={() => {
-                      setEmail(acc.email);
-                      setPassword(acc.password);
-                    }}
-                    className="rounded-lg border border-slate-200 px-2 py-2 text-left text-xs text-slate-600 hover:border-brand-300 hover:bg-brand-50"
-                  >
-                    <div className="font-medium text-slate-800">{acc.role}</div>
-                    <div className="truncate text-slate-400">{acc.email}</div>
-                  </button>
-                ))}
-              </div>
-            </div>
           </div>
         </main>
       )}

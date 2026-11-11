@@ -71,16 +71,26 @@ micro sur une page HTTP comme `http://mouvplus.com:18400`.
 Une salle ouverte directement sur `https://meet.mouvplus.com/...` sans passer par l'application est
 refusée : seul le backend MouvPlus peut délivrer l'accès.
 
-### Comptes de démonstration (après seed)
+### Comptes utilisateurs
 
-| Rôle | Email | Mot de passe |
-|---|---|---|
-| Programmateur | admin@mouvplus.fr | admin123 |
-| Entraîneur (Slim) | slim.abderrahim@mouvplus.fr | coach123 |
-| Conseiller sportif | conseiller@mouvplus.fr | conseiller123 |
-| Adhérent (Hsan) | hsan.soussou@mouvplus.fr | membre123 |
+Créez vos vrais comptes depuis le serveur (le mot de passe généré s'affiche une seule fois ; il se change
+ensuite dans « Mon profil ») :
 
-**Changez ces mots de passe / supprimez ces comptes avant toute mise en production réelle.**
+```bash
+sudo docker compose exec backend npx tsx src/db/create-user.ts --role ADMIN --email vous@exemple.fr --first Prénom --last Nom
+sudo docker compose exec backend npx tsx src/db/create-user.ts --role ENTRAINEUR --email coach@exemple.fr --first Prénom --last Nom
+sudo docker compose exec backend npx tsx src/db/create-user.ts --role MEMBRE --email adherent@exemple.fr --first Prénom --last Nom
+```
+
+Relancer la commande sur un email existant réinitialise son mot de passe.
+
+Le seed (`src/db/seed.ts`) crée des comptes et données **de démonstration** (`admin@mouvplus.fr`, etc.) et
+**vide toute la base** avant : ne l'exécutez jamais en production et laissez `SEED_ON_START=false`. Pour
+supprimer les comptes de démonstration (après avoir créé votre propre compte ADMIN) :
+
+```bash
+sudo docker compose exec backend npx tsx src/db/remove-demo.ts
+```
 
 ## Structure du projet
 

@@ -14,14 +14,16 @@ const registerSchema = z.object({
   password: z.string().min(6),
   firstName: z.string().min(1),
   lastName: z.string().min(1),
-  role: z.enum(["ADMIN", "ENTRAINEUR", "CONSEILLER", "MEMBRE"]).optional(),
   phone: z.string().optional(),
 });
 
 router.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.flatten() });
-  const { email, password, firstName, lastName, role, phone } = parsed.data;
+  const { email, password, firstName, lastName, phone } = parsed.data;
+  // Inscription publique : toujours un compte Adhérent. Les comptes coach /
+  // conseiller / admin se créent côté serveur (src/db/create-user.ts).
+  const role = "MEMBRE" as const;
 
   const [existing] = await db.select().from(users).where(eq(users.email, email)).limit(1);
   if (existing) return res.status(409).json({ error: "Email déjà utilisé" });
@@ -30,16 +32,8 @@ router.post("/register", async (req, res) => {
   const id = newId();
   const [user] = await db
     .insert(users)
-    .values({ id, email, passwordHash, firstName, lastName, role: role || "MEMBRE", phone })
+    .values({ id, email, passwordHash, firstName, lastName, role, phone })
     .returning();
-
-  if (user.role === "ENTRAINEUR" || user.role === "CONSEILLER") {
-    await db.insert(intervenantProfiles).values({
-      id: newId(),
-      userId: user.id,
-      specialty: user.role === "ENTRAINEUR" ? "Coach sportif" : "Conseiller sportif",
-    });
-  }
 
   const token = signToken({ sub: user.id, role: user.role });
   res.status(201).json({ token, user: sanitize(user) });
