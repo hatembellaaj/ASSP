@@ -79,6 +79,12 @@ s'affiche une fois ; « Réinitialiser le mot de passe » en génère un nouveau
 séances visio depuis **Espace Coach sportif → + Planifier une séance** ; elles apparaissent chez l'adhérent dans
 « Mes séances » avec le bouton « Rejoindre ».
 
+Une séance réunit un coach et **1 à 20 adhérents** (table `session_participants`) : un seul pour une séance
+individuelle, plusieurs pour un cours collectif. Le bouton **Participants** permet d'en ajouter ou d'en retirer.
+Seuls les inscrits, le coach et l'admin obtiennent un jeton d'accès à la salle ; le coach est le seul modérateur.
+Les séances créées avant cette évolution (champ `sessions.member_id`) sont reprises automatiquement au
+démarrage du backend.
+
 Le tout premier compte ADMIN (et tout compte en dépannage) se crée depuis le serveur (le mot de passe généré s'affiche une seule fois ; il se change
 ensuite dans « Mon profil ») :
 

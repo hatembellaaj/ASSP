@@ -23,6 +23,7 @@ import dashboardRoutes from "./routes/dashboard";
 import conseillerRoutes from "./routes/conseiller";
 import notificationRoutes from "./routes/notifications";
 import { UPLOAD_DIR } from "./utils/uploads";
+import { backfillSessionParticipants } from "./utils/sessionParticipants";
 
 const app = express();
 
@@ -61,6 +62,8 @@ app.use((err: any, _req: express.Request, res: express.Response, _next: express.
 });
 
 const PORT = process.env.PORT ? Number(process.env.PORT) : 4000;
+backfillSessionParticipants().catch((e) => console.error("Reprise des participants impossible :", e));
+
 app.listen(PORT, () => {
   console.log(`MouvPlus backend démarré sur le port ${PORT}`);
 });

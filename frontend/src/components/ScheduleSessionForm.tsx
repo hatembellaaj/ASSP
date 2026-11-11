@@ -1,33 +1,29 @@
 import { useState } from "react";
 import type { FormEvent } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { format } from "date-fns";
 import { api } from "../api/client";
 import { Button, Card } from "./ui";
+import ParticipantPicker from "./ParticipantPicker";
 
 const inputClass =
   "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none";
 
-/** Formulaire du coach pour planifier une séance visio avec un adhérent. */
+/** Formulaire du coach pour planifier une séance visio avec un ou plusieurs adhérents. */
 export default function ScheduleSessionForm({ onDone }: { onDone: () => void }) {
   const queryClient = useQueryClient();
-  const [memberId, setMemberId] = useState("");
+  const [memberIds, setMemberIds] = useState<string[]>([]);
   const [date, setDate] = useState(format(new Date(), "yyyy-MM-dd"));
   const [time, setTime] = useState("10:00");
   const [durationMin, setDurationMin] = useState(45);
   const [notes, setNotes] = useState("");
   const [error, setError] = useState<string | null>(null);
 
-  const { data: members, isLoading } = useQuery({
-    queryKey: ["members"],
-    queryFn: async () => (await api.get("/users/members")).data as Array<{ id: string; firstName: string; lastName: string; email: string }>,
-  });
-
   const mutation = useMutation({
     mutationFn: async () =>
       (
         await api.post("/sessions", {
-          memberId,
+          memberIds,
           // Heure locale du navigateur du coach → ISO (UTC)
           scheduledAt: new Date(`${date}T${time}`).toISOString(),
           durationMin,
@@ -44,7 +40,7 @@ export default function ScheduleSessionForm({ onDone }: { onDone: () => void }) 
   function submit(e: FormEvent) {
     e.preventDefault();
     setError(null);
-    if (!memberId) return setError("Choisissez un adhérent");
+    if (memberIds.length === 0) return setError("Choisissez au moins un adhérent");
     mutation.mutate();
   }
 
@@ -54,18 +50,11 @@ export default function ScheduleSessionForm({ onDone }: { onDone: () => void }) 
         <h2 className="text-sm font-semibold text-slate-800">Planifier une séance en visio</h2>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Adhérent</label>
-          <select value={memberId} onChange={(e) => setMemberId(e.target.value)} className={inputClass} required>
-            <option value="">{isLoading ? "Chargement…" : "— Choisir un adhérent —"}</option>
-            {members?.map((m) => (
-              <option key={m.id} value={m.id}>
-                {m.firstName} {m.lastName} ({m.email})
-              </option>
-            ))}
-          </select>
-          {!isLoading && members?.length === 0 && (
-            <p className="mt-1 text-xs text-amber-600">Aucun adhérent : l'administrateur doit d'abord créer leurs comptes.</p>
-          )}
+          <label className="mb-1 block text-xs font-medium text-slate-600">
+            Participants{" "}
+            <span className="font-normal text-slate-400">— un adhérent pour une séance individuelle, plusieurs pour un cours collectif</span>
+          </label>
+          <ParticipantPicker value={memberIds} onChange={setMemberIds} />
         </div>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
@@ -90,7 +79,7 @@ export default function ScheduleSessionForm({ onDone }: { onDone: () => void }) 
         </div>
 
         <div>
-          <label className="mb-1 block text-xs font-medium text-slate-600">Note pour l'adhérent (facultatif)</label>
+          <label className="mb-1 block text-xs font-medium text-slate-600">Note pour les participants (facultatif)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
@@ -107,7 +96,11 @@ export default function ScheduleSessionForm({ onDone }: { onDone: () => void }) 
             Annuler
           </Button>
           <Button type="submit" disabled={mutation.isPending}>
-            {mutation.isPending ? "Enregistrement…" : "Planifier"}
+            {mutation.isPending
+              ? "Enregistrement…"
+              : memberIds.length > 1
+                ? `Planifier la séance de groupe (${memberIds.length})`
+                : "Planifier"}
           </Button>
         </div>
       </form>

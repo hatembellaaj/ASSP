@@ -101,7 +101,9 @@ export const clubMemberships = pgTable(
 // ---------- SESSIONS ----------
 export const sessionsTable = pgTable("sessions", {
   id: id(),
-  memberId: text("member_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  // Ancien champ « un seul adhérent » : conservé pour les séances existantes.
+  // La liste des participants fait foi : voir sessionParticipants.
+  memberId: text("member_id").references(() => users.id, { onDelete: "cascade" }),
   coachId: text("coach_id").notNull().references(() => users.id, { onDelete: "cascade" }),
   type: sessionTypeEnum("type").notNull().default("INDIVIDUEL"),
   scheduledAt: timestamp("scheduled_at").notNull(),
@@ -111,6 +113,17 @@ export const sessionsTable = pgTable("sessions", {
   notes: text("notes"),
   createdAt: createdAt(),
 });
+
+// Participants (adhérents) d'une séance : un coach, un ou plusieurs adhérents.
+export const sessionParticipants = pgTable(
+  "session_participants",
+  {
+    sessionId: text("session_id").notNull().references(() => sessionsTable.id, { onDelete: "cascade" }),
+    memberId: text("member_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    createdAt: createdAt(),
+  },
+  (t) => ({ uniq: uniqueIndex("session_participants_session_member_idx").on(t.sessionId, t.memberId) })
+);
 
 // ---------- PROGRAMS ----------
 export const programs = pgTable("programs", {
@@ -307,9 +320,15 @@ export const intervenantProfilesRelations = relations(intervenantProfiles, ({ on
   user: one(users, { fields: [intervenantProfiles.userId], references: [users.id] }),
 }));
 
-export const sessionsRelations = relations(sessionsTable, ({ one }) => ({
+export const sessionsRelations = relations(sessionsTable, ({ one, many }) => ({
   member: one(users, { fields: [sessionsTable.memberId], references: [users.id], relationName: "memberSessions" }),
   coach: one(users, { fields: [sessionsTable.coachId], references: [users.id], relationName: "coachSessions" }),
+  participants: many(sessionParticipants),
+}));
+
+export const sessionParticipantsRelations = relations(sessionParticipants, ({ one }) => ({
+  session: one(sessionsTable, { fields: [sessionParticipants.sessionId], references: [sessionsTable.id] }),
+  member: one(users, { fields: [sessionParticipants.memberId], references: [users.id] }),
 }));
 
 export const postsRelations = relations(posts, ({ one, many }) => ({

@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { eq, and, gte, count, desc, asc } from "drizzle-orm";
+import { eq, and, gte, count, desc, asc, inArray } from "drizzle-orm";
 import { db } from "../db";
 import {
   users,
@@ -11,6 +11,7 @@ import {
 } from "../db/schema";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { computeIcopeScore } from "../utils/icope";
+import { sessionIdsOfMember } from "../utils/sessionParticipants";
 import { alias } from "drizzle-orm/pg-core";
 
 const router = Router();
@@ -26,12 +27,12 @@ router.get("/", requireAuth, async (req: AuthedRequest, res) => {
   const doneSessions = await db
     .select()
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.memberId, userId), eq(sessionsTable.status, "EFFECTUEE")));
+    .where(and(inArray(sessionsTable.id, sessionIdsOfMember(userId)), eq(sessionsTable.status, "EFFECTUEE")));
 
   const monthSessions = await db
     .select()
     .from(sessionsTable)
-    .where(and(eq(sessionsTable.memberId, userId), gte(sessionsTable.scheduledAt, monthStart)));
+    .where(and(inArray(sessionsTable.id, sessionIdsOfMember(userId)), gte(sessionsTable.scheduledAt, monthStart)));
 
   const [latestIcope] = await db
     .select()
@@ -57,7 +58,7 @@ router.get("/", requireAuth, async (req: AuthedRequest, res) => {
     })
     .from(sessionsTable)
     .leftJoin(coachAlias, eq(sessionsTable.coachId, coachAlias.id))
-    .where(and(eq(sessionsTable.memberId, userId), gte(sessionsTable.scheduledAt, now)))
+    .where(and(inArray(sessionsTable.id, sessionIdsOfMember(userId)), gte(sessionsTable.scheduledAt, now)))
     .orderBy(asc(sessionsTable.scheduledAt))
     .limit(5);
 

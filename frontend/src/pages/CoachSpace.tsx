@@ -8,12 +8,44 @@ import { Card, StatCard, StatusPill, EmptyState, Loading, Button } from "../comp
 import { useAuth } from "../context/AuthContext";
 import ScheduleSessionForm from "../components/ScheduleSessionForm";
 import JitsiRoom from "../components/JitsiRoom";
+import ParticipantPicker from "../components/ParticipantPicker";
+import { participantsFullList, participantsLabel, sessionParticipants } from "../utils/sessions";
+
+/** Modification des participants d'une séance déjà planifiée. */
+function EditParticipants({ session, onDone }: { session: any; onDone: () => void }) {
+  const queryClient = useQueryClient();
+  const [memberIds, setMemberIds] = useState<string[]>(sessionParticipants(session).map((p) => p.id));
+  const [error, setError] = useState<string | null>(null);
+  const save = useMutation({
+    mutationFn: async () => (await api.put(`/sessions/${session.id}/participants`, { memberIds })).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["sessions"] });
+      onDone();
+    },
+    onError: (e: any) => setError(e?.response?.data?.error || "Modification impossible"),
+  });
+  return (
+    <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
+      <ParticipantPicker value={memberIds} onChange={setMemberIds} />
+      {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>}
+      <div className="flex justify-end gap-2">
+        <Button variant="secondary" onClick={onDone}>
+          Fermer
+        </Button>
+        <Button disabled={save.isPending || memberIds.length === 0} onClick={() => save.mutate()}>
+          {save.isPending ? "Enregistrement…" : "Enregistrer les participants"}
+        </Button>
+      </div>
+    </div>
+  );
+}
 
 export default function CoachSpace() {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [showForm, setShowForm] = useState(false);
   const [active, setActive] = useState<{ id: string; title: string } | null>(null);
+  const [editing, setEditing] = useState<string | null>(null);
   const cancel = useMutation({
     mutationFn: async (id: string) => api.patch(`/sessions/${id}/status`, { status: "ANNULEE" }),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["sessions"] }),
@@ -32,7 +64,9 @@ export default function CoachSpace() {
       )
       .sort((a: any, b: any) => new Date(a.scheduledAt).getTime() - new Date(b.scheduledAt).getTime()) || [];
   const done = sessions?.filter((s: any) => s.status === "EFFECTUEE") || [];
-  const uniqueMembers = new Set(sessions?.filter((s: any) => s.status !== "ANNULEE").map((s: any) => s.member?.id)).size;
+  const uniqueMembers = new Set(
+    sessions?.filter((s: any) => s.status !== "ANNULEE").flatMap((s: any) => sessionParticipants(s).map((p) => p.id))
+  ).size;
 
   return (
     <div>
@@ -63,30 +97,40 @@ export default function CoachSpace() {
           {!isLoading && upcoming.length === 0 && <EmptyState title="Aucune séance à venir" />}
           <div className="space-y-2">
             {upcoming.map((s: any) => (
-              <Card key={s.id} className="flex items-center justify-between">
-                <div>
-                  <div className="text-sm font-medium text-slate-800">
-                    {s.member?.firstName} {s.member?.lastName}
+              <Card key={s.id}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <div className="text-sm font-medium text-slate-800" title={participantsFullList(s)}>
+                      {participantsLabel(s)}
+                    </div>
+                    <div className="text-xs text-slate-400">
+                      {format(new Date(s.scheduledAt), "EEEE d MMMM à HH:mm", { locale: fr })} · {s.durationMin} min
+                    </div>
+                    {sessionParticipants(s).length > 2 && (
+                      <div className="mt-1 text-xs text-slate-500">{participantsFullList(s)}</div>
+                    )}
                   </div>
-                  <div className="text-xs text-slate-400">
-                    {format(new Date(s.scheduledAt), "EEEE d MMMM à HH:mm", { locale: fr })} · {s.durationMin} min
+                  <div className="flex items-center gap-2">
+                    <StatusPill status={s.status} />
+                    <Button variant="ghost" onClick={() => setEditing(editing === s.id ? null : s.id)}>
+                      Participants
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      disabled={cancel.isPending}
+                      onClick={() => {
+                        if (confirm(`Annuler la séance (${participantsLabel(s)}) ? Tous les participants seront concernés.`))
+                          cancel.mutate(s.id);
+                      }}
+                    >
+                      Annuler
+                    </Button>
+                    <Button onClick={() => setActive({ id: s.id, title: `Séance · ${participantsLabel(s)}` })}>
+                      Rejoindre
+                    </Button>
                   </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <StatusPill status={s.status} />
-                  <Button
-                    variant="ghost"
-                    disabled={cancel.isPending}
-                    onClick={() => {
-                      if (confirm(`Annuler la séance avec ${s.member?.firstName} ${s.member?.lastName} ?`)) cancel.mutate(s.id);
-                    }}
-                  >
-                    Annuler
-                  </Button>
-                  <Button onClick={() => setActive({ id: s.id, title: `Séance avec ${s.member?.firstName} ${s.member?.lastName}` })}>
-                    Rejoindre
-                  </Button>
-                </div>
+                {editing === s.id && <EditParticipants session={s} onDone={() => setEditing(null)} />}
               </Card>
             ))}
           </div>

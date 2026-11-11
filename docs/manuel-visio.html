@@ -1,0 +1,351 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>Manuel d'utilisation MouvPlus — Séances en visio</title>
+<style>
+  :root {
+    --brand: #2563eb; --brand-dark: #1e40af; --brand-soft: #eff6ff; --brand-line: #bfdbfe;
+    --ink: #0f172a; --muted: #475569; --faint: #94a3b8; --line: #e2e8f0; --bg-soft: #f8fafc;
+    --ok: #047857; --ok-soft: #ecfdf5; --warn: #b45309; --warn-soft: #fffbeb;
+  }
+  @page {
+    size: A4; margin: 20mm 18mm 22mm 18mm;
+    @bottom-left { content: "MouvPlus — Manuel des séances en visio"; font: 8pt -apple-system, "Helvetica Neue", Arial, sans-serif; color: #94a3b8; }
+    @bottom-right { content: counter(page) " / " counter(pages); font: 8pt -apple-system, "Helvetica Neue", Arial, sans-serif; color: #94a3b8; }
+  }
+  @page cover { margin: 0; @bottom-left { content: none; } @bottom-right { content: none; } }
+  * { box-sizing: border-box; }
+  html { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body { margin: 0; font: 10.5pt/1.55 -apple-system, "Helvetica Neue", Arial, sans-serif; color: var(--ink); background: #fff; }
+
+  /* Couverture */
+  .cover { page: cover; height: 297mm; display: flex; flex-direction: column; justify-content: space-between;
+    padding: 28mm 22mm; background: linear-gradient(160deg, #0f172a 0%, #1e3a8a 55%, #2563eb 100%); color: #fff; break-after: page; }
+  .logo { font-size: 15pt; font-weight: 700; letter-spacing: .5px; }
+  .logo span { color: #93c5fd; }
+  .cover h1 { font-size: 34pt; line-height: 1.1; margin: 0 0 6mm; font-weight: 800; }
+  .cover .sub { font-size: 14pt; color: #cbd5e1; max-width: 140mm; }
+  .cover .meta { display: flex; gap: 10mm; font-size: 9.5pt; color: #cbd5e1; border-top: 1px solid rgba(255,255,255,.25); padding-top: 6mm; }
+  .cover .meta b { display: block; color: #fff; font-size: 10.5pt; }
+
+  /* Sommaire */
+  .toc { break-after: page; }
+  .toc h2 { border: 0; }
+  .toc ol { list-style: none; padding: 0; margin: 8mm 0 0; counter-reset: t; }
+  .toc li { counter-increment: t; display: flex; align-items: baseline; gap: 4mm; padding: 3.5mm 0; border-bottom: 1px solid var(--line); font-size: 12pt; }
+  .toc li::before { content: counter(t, decimal-leading-zero); color: var(--brand); font-weight: 700; width: 9mm; }
+  .toc li small { margin-left: auto; color: var(--muted); font-size: 9.5pt; }
+
+  /* Titres */
+  section { break-before: page; }
+  section.flow { break-before: auto; margin-top: 10mm; }
+  .kicker { color: var(--brand); font-weight: 700; font-size: 9pt; letter-spacing: 1.5px; text-transform: uppercase; }
+  h2 { font-size: 21pt; margin: 1mm 0 3mm; padding-bottom: 3mm; border-bottom: 2px solid var(--brand); }
+  h3 { font-size: 12.5pt; margin: 7mm 0 2.5mm; color: var(--brand-dark); break-after: avoid; }
+  .lead { font-size: 11.5pt; color: var(--muted); margin: 0 0 4mm; }
+  p { margin: 0 0 3mm; }
+  b, strong { font-weight: 650; }
+  .ui { display: inline-block; padding: 0 2mm; border: 1px solid var(--brand-line); background: var(--brand-soft); color: var(--brand-dark); border-radius: 1.2mm; font-weight: 600; font-size: 9.5pt; white-space: nowrap; }
+  .url { font-family: ui-monospace, Menlo, monospace; font-size: 9.5pt; color: var(--brand-dark); }
+
+  /* Étapes */
+  ol.steps { list-style: none; padding: 0; margin: 0 0 4mm; counter-reset: s; }
+  ol.steps li { counter-increment: s; position: relative; padding: 1.6mm 0 1.6mm 11mm; break-inside: avoid; }
+  ol.steps li::before { content: counter(s); position: absolute; left: 0; top: 1.2mm; width: 6.5mm; height: 6.5mm; border-radius: 50%;
+    background: var(--brand); color: #fff; font-weight: 700; font-size: 9pt; display: flex; align-items: center; justify-content: center; }
+
+  ul.dots { padding-left: 5mm; margin: 0 0 4mm; }
+  ul.dots li { margin: 1mm 0; }
+
+  /* Encadrés */
+  .note { border-left: 4px solid var(--brand); background: var(--brand-soft); padding: 3mm 4mm; border-radius: 0 2mm 2mm 0; margin: 4mm 0; break-inside: avoid; }
+  .note.ok { border-color: var(--ok); background: var(--ok-soft); }
+  .note.warn { border-color: var(--warn); background: var(--warn-soft); }
+  .note .t { font-weight: 700; display: block; margin-bottom: 1mm; }
+
+  /* Tableaux */
+  table { width: 100%; border-collapse: collapse; margin: 3mm 0 5mm; font-size: 9.5pt; }
+  thead { display: table-header-group; }
+  th { text-align: left; background: var(--ink); color: #fff; font-weight: 600; padding: 2.5mm 3mm; }
+  th:first-child { border-radius: 1.5mm 0 0 0; } th:last-child { border-radius: 0 1.5mm 0 0; }
+  td { padding: 2.5mm 3mm; border-bottom: 1px solid var(--line); vertical-align: top; }
+  tr { break-inside: avoid; }
+  tbody tr:nth-child(even) td { background: var(--bg-soft); }
+  .pill { display: inline-block; padding: .3mm 2.5mm; border-radius: 10mm; font-size: 8.5pt; font-weight: 600; white-space: nowrap; }
+  .p-amber { background: #fef3c7; color: #92400e; } .p-purple { background: #f3e8ff; color: #6b21a8; }
+  .p-blue { background: #dbeafe; color: #1e40af; } .p-grey { background: #f1f5f9; color: #475569; }
+  .yes { color: var(--ok); font-weight: 600; } .no { color: #b91c1c; font-weight: 600; }
+
+  /* Parcours */
+  .flow-steps { display: grid; grid-template-columns: repeat(4, 1fr); gap: 3mm; margin: 5mm 0; }
+  .card { border: 1px solid var(--line); border-radius: 2.5mm; padding: 3.5mm; background: #fff; break-inside: avoid; position: relative; }
+  .card .n { color: var(--brand); font-weight: 800; font-size: 16pt; line-height: 1; }
+  .card .who { font-size: 8pt; text-transform: uppercase; letter-spacing: 1px; color: var(--faint); margin: 1.5mm 0 1mm; }
+  .card p { margin: 0; font-size: 9.5pt; }
+
+  .roles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 3mm; margin: 4mm 0; }
+  .role { border-radius: 2.5mm; padding: 4mm; background: var(--bg-soft); border-top: 4px solid var(--brand); break-inside: avoid; }
+  .role h4 { margin: 0 0 1mm; font-size: 11.5pt; }
+  .role .alias { font-size: 8.5pt; color: var(--muted); margin-bottom: 2mm; }
+  .role p { font-size: 9.5pt; margin: 0 0 2mm; }
+  .role .where { font-size: 8.5pt; color: var(--brand-dark); font-weight: 600; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 6mm; }
+  .three { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 5mm; font-size: 9.8pt; }
+  .three ol.steps li { padding-left: 9mm; }
+</style>
+</head>
+<body>
+
+<!-- Couverture -->
+<div class="cover">
+  <div class="logo">Mouv<span>Plus</span></div>
+  <div>
+    <h1>Séances d'entraînement<br>en visioconférence</h1>
+    <div class="sub">Manuel d'utilisation pour l'administrateur, le coach et l'adhérent</div>
+  </div>
+  <div class="meta">
+    <div><b>Site</b>https://mouvplus.com</div>
+    <div><b>Version</b>Novembre 2026</div>
+    <div><b>Public</b>Tous les utilisateurs</div>
+  </div>
+</div>
+
+<!-- Sommaire -->
+<div class="toc">
+  <div class="kicker">Sommaire</div>
+  <h2>Dans ce manuel</h2>
+  <ol>
+    <li>Qui fait quoi <small>Rôles et parcours d'une séance</small></li>
+    <li>Administrateur <small>Créer les comptes, réinitialiser un mot de passe</small></li>
+    <li>Coach <small>Planifier, lancer et annuler une séance</small></li>
+    <li>Adhérent <small>Se connecter et rejoindre sa séance</small></li>
+    <li>Pendant la visio <small>Boutons et bonnes pratiques</small></li>
+    <li>Statuts des séances <small>Ce que signifie chaque statut</small></li>
+    <li>Dépannage <small>Problèmes fréquents et solutions</small></li>
+  </ol>
+  <div class="note" style="margin-top:12mm">
+    <span class="t">À retenir</span>
+    Tout se passe sur <span class="url">https://mouvplus.com</span>, sans application à installer.
+    La visio s'ouvre uniquement via le bouton <span class="ui">Rejoindre</span> du site.
+  </div>
+</div>
+
+<!-- 1 -->
+<section>
+  <div class="kicker">Partie 1</div>
+  <h2>Qui fait quoi</h2>
+  <p class="lead">Trois rôles interviennent : l'administrateur crée les comptes, le coach planifie et anime, l'adhérent rejoint.</p>
+
+  <div class="roles">
+    <div class="role">
+      <h4>Administrateur</h4>
+      <div class="alias">Affiché « Programmateur »</div>
+      <p>Crée les comptes du coach et des adhérents, réinitialise les mots de passe.</p>
+      <div class="where">Menu : Utilisateurs</div>
+    </div>
+    <div class="role">
+      <h4>Coach</h4>
+      <div class="alias">Affiché « Entraîneur »</div>
+      <p>Planifie les séances individuelles ou de groupe, les lance et les annule. Il est modérateur de la salle.</p>
+      <div class="where">Menu : Espace Coach sportif</div>
+    </div>
+    <div class="role">
+      <h4>Adhérent</h4>
+      <div class="alias">La personne qui s'entraîne</div>
+      <p>Retrouve ses séances et les rejoint à l'heure prévue.</p>
+      <div class="where">Menu : Mes séances</div>
+    </div>
+  </div>
+
+  <h3>Le parcours d'une séance</h3>
+  <div class="flow-steps">
+    <div class="card"><div class="n">1</div><div class="who">Administrateur</div><p>Crée les comptes du coach et de l'adhérent et leur transmet leurs identifiants.</p></div>
+    <div class="card"><div class="n">2</div><div class="who">Coach</div><p>Planifie la séance : un ou plusieurs adhérents, date, heure, durée.</p></div>
+    <div class="card"><div class="n">3</div><div class="who">Adhérents</div><p>Chacun reçoit une notification ; la séance apparaît dans « Mes séances ».</p></div>
+    <div class="card"><div class="n">4</div><div class="who">Tous</div><p>À l'heure prévue, cliquent sur « Rejoindre » et se retrouvent en visio.</p></div>
+  </div>
+  <div class="note ok">
+    <span class="t">Confidentialité</span>
+    Chaque séance a sa propre salle visio, privée, hébergée sur le serveur de MouvPlus. Seuls le coach, les adhérents
+    inscrits à la séance et l'administrateur peuvent y entrer. Aucune limite de durée.
+  </div>
+</section>
+
+<!-- 2 -->
+<section>
+  <div class="kicker">Partie 2</div>
+  <h2>Administrateur : créer les comptes</h2>
+  <p class="lead">Seul l'administrateur peut créer un compte coach. L'inscription publique ne crée que des comptes adhérent.</p>
+
+  <h3>Créer un compte</h3>
+  <ol class="steps">
+    <li>Connectez-vous sur <span class="url">https://mouvplus.com</span> avec votre compte administrateur.</li>
+    <li>Dans le menu de gauche, ouvrez <span class="ui">Utilisateurs</span>.</li>
+    <li>Cliquez sur <span class="ui">+ Ajouter un utilisateur</span>.</li>
+    <li>Remplissez le prénom, le nom, l'email et, si vous le souhaitez, le téléphone.</li>
+    <li>Choisissez le rôle : <b>Entraîneur / coach</b> pour le coach, <b>Adhérent (s'entraîne)</b> pour un pratiquant.</li>
+    <li>Cliquez sur <span class="ui">Créer le compte</span>.</li>
+  </ol>
+  <div class="note warn">
+    <span class="t">Le mot de passe n'est affiché qu'une seule fois</span>
+    Un encadré vert affiche l'adresse du site, l'email et un mot de passe provisoire. Cliquez sur
+    <span class="ui">Copier</span> et envoyez ce texte à la personne (SMS, email, WhatsApp) avant de fermer l'encadré.
+  </div>
+
+  <h3>Réinitialiser un mot de passe oublié</h3>
+  <ol class="steps">
+    <li>Dans <span class="ui">Utilisateurs</span>, repérez la personne dans la liste.</li>
+    <li>Cliquez sur <span class="ui">Réinitialiser le mot de passe</span> au bout de sa ligne, puis confirmez.</li>
+    <li>Copiez le nouveau mot de passe affiché et transmettez-le.</li>
+  </ol>
+  <p>L'ancien mot de passe cesse de fonctionner immédiatement.</p>
+</section>
+
+<!-- 3 -->
+<section>
+  <div class="kicker">Partie 3</div>
+  <h2>Coach : planifier et animer</h2>
+  <p class="lead">Le coach gère tout depuis l'<b>Espace Coach sportif</b>. Une séance réunit le coach et <b>1 à 20 adhérents</b> : un seul pour une séance individuelle, plusieurs pour un cours collectif.</p>
+
+  <h3>Planifier une séance</h3>
+  <ol class="steps">
+    <li>Ouvrez <span class="ui">Espace Coach sportif</span> dans le menu de gauche.</li>
+    <li>Cliquez sur <span class="ui">+ Planifier une séance</span> en haut à droite.</li>
+    <li>Cochez le ou les adhérents participants. Le champ de recherche aide à les retrouver, et le compteur indique le nombre de places utilisées (20 maximum). Si la liste est vide, demandez à l'administrateur de créer les comptes.</li>
+    <li>Indiquez la date, l'heure et la durée : 30, 45, 60, 75 ou 90 minutes.</li>
+    <li>Ajoutez si besoin une note pour les participants, par exemple « prévoir un tapis et une bouteille d'eau ».</li>
+    <li>Cliquez sur <span class="ui">Planifier</span>, ou <span class="ui">Planifier la séance de groupe</span> si plusieurs adhérents sont cochés.</li>
+  </ol>
+  <div class="note">
+    L'heure saisie est celle de votre ordinateur. Une date déjà passée est refusée. Chaque participant reçoit aussitôt une notification.
+  </div>
+
+  <div class="three">
+    <div>
+      <h3>Lancer la séance</h3>
+      <ol class="steps">
+        <li>Quelques minutes avant l'heure, ouvrez <span class="ui">Espace Coach sportif</span>.</li>
+        <li>Dans « Séances à venir », cliquez sur <span class="ui">Rejoindre</span>.</li>
+        <li>Autorisez la caméra et le micro.</li>
+      </ol>
+      <p>Vous êtes <b>modérateur</b> : vous pouvez couper le micro d'un participant ou l'exclure.</p>
+    </div>
+    <div>
+      <h3>Modifier les participants</h3>
+      <ol class="steps">
+        <li>Cliquez sur <span class="ui">Participants</span> à côté de la séance.</li>
+        <li>Cochez ou décochez des adhérents.</li>
+        <li>Cliquez sur <span class="ui">Enregistrer les participants</span>.</li>
+      </ol>
+      <p>Les adhérents ajoutés sont notifiés ; un adhérent retiré ne peut plus entrer.</p>
+    </div>
+    <div>
+      <h3>Annuler une séance</h3>
+      <ol class="steps">
+        <li>Dans « Séances à venir », cliquez sur <span class="ui">Annuler</span>.</li>
+        <li>Confirmez.</li>
+      </ol>
+      <p>La salle visio est alors fermée pour <b>tous</b> les participants.</p>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section>
+  <div class="kicker">Partie 4</div>
+  <h2>Adhérent : rejoindre sa séance</h2>
+  <p class="lead">Rien à installer : un navigateur récent suffit, sur ordinateur, tablette ou téléphone.</p>
+
+  <div class="two">
+    <div>
+      <h3>Première connexion</h3>
+      <ol class="steps">
+        <li>Ouvrez <span class="url">https://mouvplus.com</span> (bien avec <b>https</b>).</li>
+        <li>Saisissez l'email et le mot de passe provisoire reçus de MouvPlus.</li>
+        <li>En cas d'oubli, demandez un nouveau mot de passe à l'administrateur.</li>
+      </ol>
+    </div>
+    <div>
+      <h3>Rejoindre la séance</h3>
+      <ol class="steps">
+        <li>Ouvrez <span class="ui">Mes séances</span> dans le menu de gauche.</li>
+        <li>Repérez la séance avec votre coach : date, heure et durée sont indiquées. Pour un cours collectif, la mention « Groupe » et la liste des participants s'affichent.</li>
+        <li>À l'heure prévue, cliquez sur <span class="ui">Rejoindre</span>.</li>
+        <li>Autorisez la caméra et le micro.</li>
+      </ol>
+    </div>
+  </div>
+  <div class="note ok">
+    <span class="t">En retard ?</span>
+    Le bouton <span class="ui">Rejoindre</span> reste utilisable pendant toute la séance. Une séance annulée affiche un bouton grisé.
+  </div>
+
+</section>
+
+<!-- 5 -->
+<section>
+    <div class="kicker">Partie 5</div>
+    <h2>Pendant la visio</h2>
+    <p class="lead">La visio s'ouvre en plein écran dans le site, sans limite de durée.</p>
+    <table>
+      <thead><tr><th style="width:32%">Action</th><th>Comment faire</th></tr></thead>
+      <tbody>
+        <tr><td><b>Couper / activer le micro ou la caméra</b></td><td>Boutons en bas de l'écran.</td></tr>
+        <tr><td><b>Changer de caméra ou de micro</b></td><td>Petite flèche à côté du bouton correspondant.</td></tr>
+        <tr><td><b>Discussion écrite</b></td><td>Icône de bulle : pour envoyer un lien ou une consigne.</td></tr>
+        <tr><td><b>Partager son écran</b></td><td>Icône d'écran (sur ordinateur) : pour montrer une vidéo ou un programme.</td></tr>
+        <tr><td><b>Quitter</b></td><td>Bouton rouge <span class="ui" style="color:#b91c1c;border-color:#fecaca;background:#fef2f2">Quitter</span> en haut à droite : retour sur le site.</td></tr>
+      </tbody>
+    </table>
+    <h3>Pour une bonne séance</h3>
+    <ul class="dots">
+      <li>Posez le téléphone ou l'ordinateur à <b>2 ou 3 mètres</b> pour que le coach voie tout le corps.</li>
+      <li>Préférez le <b>Wi-Fi</b> à la 4G et restez proche de la box.</li>
+      <li>Utilisez Chrome, Edge, Firefox ou Safari à jour.</li>
+      <li>Testez caméra et micro <b>5 minutes avant</b> le début.</li>
+    </ul>
+</section>
+
+<!-- 6 -->
+<section>
+  <div class="kicker">Partie 6</div>
+  <h2>Statuts des séances</h2>
+  <p class="lead">Le statut affiché à côté de chaque séance se met à jour automatiquement selon l'heure.</p>
+  <table>
+    <thead><tr><th style="width:22%">Statut</th><th>Signification</th><th style="width:26%">Peut-on rejoindre ?</th></tr></thead>
+    <tbody>
+      <tr><td><span class="pill p-amber">Planifiée</span></td><td>Séance prévue dans plus d'une heure</td><td class="yes">Oui</td></tr>
+      <tr><td><span class="pill p-purple">Imminente</span></td><td>Commence dans moins d'une heure, ou en cours</td><td class="yes">Oui</td></tr>
+      <tr><td><span class="pill p-amber">À confirmer</span></td><td>Demandée par un adhérent, en attente du coach</td><td class="yes">Oui</td></tr>
+      <tr><td><span class="pill p-blue">Terminée</span></td><td>L'heure de fin est dépassée</td><td class="yes">Oui, pour prolonger</td></tr>
+      <tr><td><span class="pill p-grey">Annulée</span></td><td>Annulée par le coach ou l'administrateur</td><td class="no">Non</td></tr>
+    </tbody>
+  </table>
+
+</section>
+
+<!-- 7 -->
+<section>
+    <div class="kicker">Partie 7</div>
+    <h2>Dépannage</h2>
+    <p class="lead">La plupart des problèmes viennent de l'adresse utilisée ou des autorisations du navigateur.</p>
+    <table>
+      <thead><tr><th style="width:30%">Ce que vous voyez</th><th style="width:30%">Cause probable</th><th>Solution</th></tr></thead>
+      <tbody>
+        <tr><td><b>« Connexion impossible »</b> à la connexion</td><td>Email ou mot de passe incorrect</td><td>Demandez une réinitialisation à l'administrateur.</td></tr>
+        <tr><td><b>« WebRTC is not available »</b></td><td>Site ouvert en http ou avec un numéro de port</td><td>Ouvrez uniquement <span class="url">https://mouvplus.com</span>.</td></tr>
+        <tr><td><b>Caméra ou micro refusés</b></td><td>Autorisation bloquée dans le navigateur</td><td>Cliquez sur le cadenas à gauche de l'adresse, autorisez caméra et micro, rechargez.</td></tr>
+        <tr><td><b>« Échec de l'authentification »</b></td><td>Salle ouverte sans passer par le site</td><td>Revenez sur le site et cliquez sur <span class="ui">Rejoindre</span>.</td></tr>
+        <tr><td><b>Page meet.mouvplus.com ouverte directement</b></td><td>Accès direct non autorisé</td><td>Passez toujours par <span class="ui">Rejoindre</span>.</td></tr>
+        <tr><td><b>« Vous avez été déconnecté »</b> en boucle</td><td>Connexion internet instable</td><td>Passez en Wi-Fi, rapprochez-vous de la box, rechargez.</td></tr>
+        <tr><td><b>Chacun ne voit que sa propre caméra</b></td><td>Flux vidéo bloqué par un réseau ou un pare-feu</td><td>Essayez un autre réseau ; si tout le monde est touché, prévenez l'administrateur.</td></tr>
+        <tr><td><b>Bouton « Rejoindre » grisé</b></td><td>Séance annulée</td><td>Contactez votre coach.</td></tr>
+        <tr><td><b>Liste d'adhérents vide</b> (coach)</td><td>Aucun compte adhérent créé</td><td>L'administrateur crée le compte dans <span class="ui">Utilisateurs</span>.</td></tr>
+      </tbody>
+    </table>
+</section>
+
+</body>
+</html>

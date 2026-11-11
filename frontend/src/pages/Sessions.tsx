@@ -7,6 +7,7 @@ import { PageHeader } from "../components/Layout";
 import { Card, StatusPill, Button, Loading, EmptyState } from "../components/ui";
 import { useAuth } from "../context/AuthContext";
 import JitsiRoom from "../components/JitsiRoom";
+import { participantsFullList, participantsLabel, sessionParticipants } from "../utils/sessions";
 
 export default function Sessions() {
   const { user } = useAuth();
@@ -30,12 +31,16 @@ export default function Sessions() {
           <Card key={s.id} className="flex items-center justify-between">
             <div>
               <div className="text-sm font-semibold text-slate-800">
-                {s.type === "GROUPE" ? "Groupe" : "Individuel"} ·{" "}
-                {isIntervenant ? `${s.member?.firstName} ${s.member?.lastName}` : `${s.coach?.firstName} ${s.coach?.lastName}`}
+                {sessionParticipants(s).length > 1 ? "Groupe" : "Individuel"} ·{" "}
+                {isIntervenant ? participantsLabel(s) : `${s.coach?.firstName} ${s.coach?.lastName}`}
               </div>
               <div className="text-xs text-slate-400">
                 {format(new Date(s.scheduledAt), "EEEE d MMMM yyyy à HH:mm", { locale: fr })} · {s.durationMin} min
               </div>
+              {sessionParticipants(s).length > 1 && (
+                <div className="mt-1 text-xs text-slate-500">Participants : {participantsFullList(s)}</div>
+              )}
+              {s.notes && <div className="mt-1 text-xs italic text-slate-500">{s.notes}</div>}
             </div>
             <div className="flex items-center gap-3">
               <StatusPill status={s.status} />
@@ -45,7 +50,9 @@ export default function Sessions() {
                 onClick={() =>
                   setActive({
                     id: s.id,
-                    title: `Séance avec ${isIntervenant ? `${s.member?.firstName} ${s.member?.lastName}` : `${s.coach?.firstName} ${s.coach?.lastName}`}`,
+                    title: isIntervenant
+                      ? `Séance · ${participantsLabel(s)}`
+                      : `Séance avec ${s.coach?.firstName} ${s.coach?.lastName}`,
                   })
                 }
               >
