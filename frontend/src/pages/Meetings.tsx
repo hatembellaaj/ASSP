@@ -10,7 +10,7 @@ import JitsiRoom from "../components/JitsiRoom";
 
 export default function Meetings() {
   const { user } = useAuth();
-  const [activeRoom, setActiveRoom] = useState<string | null>(null);
+  const [active, setActive] = useState<{ id: string; title: string } | null>(null);
   const { data, isLoading } = useQuery({
     queryKey: ["meetings"],
     queryFn: async () => (await api.get("/meetings")).data,
@@ -44,7 +44,7 @@ export default function Meetings() {
                       {format(new Date(m.scheduledAt), "d MMM yyyy, HH:mm", { locale: fr })} · {m.invites?.length || 0} invité(s)
                     </div>
                   </div>
-                  <Button onClick={() => setActiveRoom(m.jitsiRoom)}>Rejoindre</Button>
+                  <Button onClick={() => setActive({ id: m.id, title: m.title })}>Rejoindre</Button>
                 </Card>
               ))}
             </div>
@@ -71,8 +71,13 @@ export default function Meetings() {
           </div>
         </div>
       </div>
-      {activeRoom && (
-        <JitsiRoom room={activeRoom} displayName={`${user?.firstName} ${user?.lastName}`} onClose={() => setActiveRoom(null)} />
+      {active && (
+        <JitsiRoom
+          joinPath={`/meetings/${active.id}/join`}
+          title={active.title}
+          displayName={`${user?.firstName} ${user?.lastName}`}
+          onClose={() => setActive(null)}
+        />
       )}
     </div>
   );

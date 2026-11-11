@@ -27,7 +27,10 @@ services:
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 4000
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
-      JITSI_DOMAIN: ${JITSI_DOMAIN:-meet.jit.si}
+      # Visio : instance Jitsi auto-hébergée ci-dessous (services jitsi-*).
+      JITSI_DOMAIN: ${JITSI_DOMAIN:-meet.mouvplus.com}
+      JITSI_APP_ID: ${JITSI_APP_ID:-mouvplus}
+      JITSI_APP_SECRET: ${JITSI_APP_SECRET:?définissez JITSI_APP_SECRET dans .env}
       SEED_ON_START: ${SEED_ON_START:-false}
     ports:
       - "${BACKEND_PORT:-18401}:4000"
@@ -55,12 +58,119 @@ services:
       - default
       - studyassur_app-network
 
+  # ===================================================================
+  # VISIOCONFÉRENCE — Jitsi Meet auto-hébergé (images officielles)
+  # Accessible sur https://${JITSI_DOMAIN} via nginx-proxy (HTTPS auto).
+  # Seuls les utilisateurs MouvPlus peuvent entrer : le backend signe un
+  # jeton (JWT) valable pour UNE salle ; le coach y est modérateur.
+  # ===================================================================
+  jitsi-web:
+    image: jitsi/web:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    restart: unless-stopped
+    depends_on:
+      - jitsi-jvb
+    environment:
+      PUBLIC_URL: https://${JITSI_DOMAIN:-meet.mouvplus.com}
+      TZ: ${TZ:-Europe/Paris}
+      # Le HTTPS est géré par nginx-proxy : le conteneur sert en HTTP (port 8000)
+      DISABLE_HTTPS: "1"
+      ENABLE_HTTP_REDIRECT: "0"
+      ENABLE_LETSENCRYPT: "0"
+      ENABLE_AUTH: "1"
+      ENABLE_GUESTS: "0"
+      AUTH_TYPE: jwt
+      DEFAULT_LANGUAGE: fr
+      ENABLE_PREJOIN_PAGE: "false"
+      ENABLE_WELCOME_PAGE: "false"
+      # nginx-proxy + letsencrypt-companion
+      VIRTUAL_HOST: ${JITSI_DOMAIN:-meet.mouvplus.com}
+      VIRTUAL_PORT: "8000"
+      LETSENCRYPT_HOST: ${JITSI_DOMAIN:-meet.mouvplus.com}
+      LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-contact@mouvplus.com}
+    volumes:
+      - jitsi_web_config:/config
+    networks:
+      - meet.jitsi
+      - studyassur_app-network
+
+  jitsi-prosody:
+    image: jitsi/prosody:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    restart: unless-stopped
+    expose:
+      - "5222"
+      - "5347"
+      - "5280"
+    environment:
+      PUBLIC_URL: https://${JITSI_DOMAIN:-meet.mouvplus.com}
+      TZ: ${TZ:-Europe/Paris}
+      ENABLE_AUTH: "1"
+      ENABLE_GUESTS: "0"
+      AUTH_TYPE: jwt
+      JWT_APP_ID: ${JITSI_APP_ID:-mouvplus}
+      JWT_APP_SECRET: ${JITSI_APP_SECRET:?définissez JITSI_APP_SECRET dans .env}
+      JWT_ALLOW_EMPTY: "0"
+      # Donne le rôle de modérateur aux porteurs d'un jeton "moderator: true" (le coach)
+      XMPP_MUC_MODULES: token_affiliation
+      JICOFO_AUTH_PASSWORD: ${JITSI_JICOFO_PASSWORD:?définissez JITSI_JICOFO_PASSWORD dans .env}
+      JVB_AUTH_PASSWORD: ${JITSI_JVB_PASSWORD:?définissez JITSI_JVB_PASSWORD dans .env}
+    volumes:
+      - jitsi_prosody_config:/config
+      - jitsi_prosody_data:/var/lib/prosody
+    networks:
+      meet.jitsi:
+        aliases:
+          - xmpp.meet.jitsi
+
+  jitsi-jicofo:
+    image: jitsi/jicofo:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    restart: unless-stopped
+    depends_on:
+      - jitsi-prosody
+    environment:
+      TZ: ${TZ:-Europe/Paris}
+      ENABLE_AUTH: "1"
+      AUTH_TYPE: jwt
+      # Pas de modérateur "au premier arrivé" : seul le jeton du coach le rend modérateur
+      ENABLE_AUTO_OWNER: "0"
+      JICOFO_AUTH_PASSWORD: ${JITSI_JICOFO_PASSWORD:?définissez JITSI_JICOFO_PASSWORD dans .env}
+    volumes:
+      - jitsi_jicofo_config:/config
+    networks:
+      - meet.jitsi
+
+  jitsi-jvb:
+    image: jitsi/jvb:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    restart: unless-stopped
+    depends_on:
+      - jitsi-prosody
+    environment:
+      PUBLIC_URL: https://${JITSI_DOMAIN:-meet.mouvplus.com}
+      TZ: ${TZ:-Europe/Paris}
+      JVB_PORT: "10000"
+      # IP publique du serveur, annoncée aux navigateurs pour le flux audio/vidéo
+      JVB_ADVERTISE_IPS: ${JITSI_PUBLIC_IP:?définissez JITSI_PUBLIC_IP (IP publique du serveur) dans .env}
+      JVB_AUTH_PASSWORD: ${JITSI_JVB_PASSWORD:?définissez JITSI_JVB_PASSWORD dans .env}
+    ports:
+      # Flux audio/vidéo : à ouvrir dans le pare-feu (UDP, pas via nginx-proxy)
+      - "10000:10000/udp"
+    volumes:
+      - jitsi_jvb_config:/config
+    networks:
+      - meet.jitsi
+
 volumes:
   mouvplus_pgdata:
   mouvplus_uploads:
+  jitsi_web_config:
+  jitsi_prosody_config:
+  jitsi_prosody_data:
+  jitsi_jicofo_config:
+  jitsi_jvb_config:
 
 networks:
   default: {}
+  # Réseau interne des services Jitsi (l'alias xmpp.meet.jitsi est attendu par les images)
+  meet.jitsi: {}
   # Réseau du reverse proxy nginx-proxy déjà en place sur le serveur (voir
   # `docker inspect nginx-proxy`) — on le rejoint pour que nginx-proxy puisse
   # router mouvplus.com directement vers ce conteneur.

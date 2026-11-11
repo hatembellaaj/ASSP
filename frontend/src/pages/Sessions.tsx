@@ -11,7 +11,7 @@ import JitsiRoom from "../components/JitsiRoom";
 export default function Sessions() {
   const { user } = useAuth();
   const isIntervenant = user?.role === "ENTRAINEUR" || user?.role === "CONSEILLER";
-  const [activeRoom, setActiveRoom] = useState<string | null>(null);
+  const [active, setActive] = useState<{ id: string; title: string } | null>(null);
 
   const { data: sessions, isLoading } = useQuery({
     queryKey: ["sessions"],
@@ -39,18 +39,28 @@ export default function Sessions() {
             </div>
             <div className="flex items-center gap-3">
               <StatusPill status={s.status} />
-              <Button variant="secondary" onClick={() => setActiveRoom(s.jitsiRoom)}>
+              <Button
+                variant="secondary"
+                disabled={s.status === "ANNULEE"}
+                onClick={() =>
+                  setActive({
+                    id: s.id,
+                    title: `Séance avec ${isIntervenant ? `${s.member?.firstName} ${s.member?.lastName}` : `${s.coach?.firstName} ${s.coach?.lastName}`}`,
+                  })
+                }
+              >
                 Rejoindre
               </Button>
             </div>
           </Card>
         ))}
       </div>
-      {activeRoom && (
+      {active && (
         <JitsiRoom
-          room={activeRoom}
+          joinPath={`/sessions/${active.id}/join`}
+          title={active.title}
           displayName={`${user?.firstName} ${user?.lastName}`}
-          onClose={() => setActiveRoom(null)}
+          onClose={() => setActive(null)}
         />
       )}
     </div>

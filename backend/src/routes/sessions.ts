@@ -3,7 +3,7 @@ import { eq, and, gte, lt, desc, asc } from "drizzle-orm";
 import { db, newId } from "../db";
 import { sessionsTable, users } from "../db/schema";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
-import { generateJitsiRoom, jitsiUrl } from "../utils/jitsi";
+import { generateJitsiRoom, jitsiUrl, jitsiJoinInfo } from "../utils/jitsi";
 import { alias } from "drizzle-orm/pg-core";
 
 const router = Router();
@@ -112,10 +112,19 @@ router.patch("/:id/status", requireAuth, async (req, res) => {
   res.json(session);
 });
 
-router.get("/:id/join", requireAuth, async (req, res) => {
+router.get("/:id/join", requireAuth, async (req: AuthedRequest, res) => {
   const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, req.params.id)).limit(1);
   if (!session) return res.status(404).json({ error: "Introuvable" });
-  res.json({ joinUrl: jitsiUrl(session.jitsiRoom), room: session.jitsiRoom });
+
+  const isCoach = session.coachId === req.userId;
+  const isMember = session.memberId === req.userId;
+  if (!isCoach && !isMember && req.userRole !== "ADMIN") {
+    return res.status(403).json({ error: "Vous ne participez pas à cette séance" });
+  }
+  if (session.status === "ANNULEE") return res.status(409).json({ error: "Séance annulée" });
+
+  const [me] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+  res.json(jitsiJoinInfo(session.jitsiRoom, me, isCoach || req.userRole === "ADMIN"));
 });
 
 export default router;

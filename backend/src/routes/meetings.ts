@@ -1,9 +1,9 @@
 import { Router } from "express";
-import { eq, desc, or } from "drizzle-orm";
+import { eq, desc, or, and } from "drizzle-orm";
 import { db, newId } from "../db";
 import { meetings, meetingInvites, users } from "../db/schema";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
-import { generateJitsiRoom, jitsiUrl } from "../utils/jitsi";
+import { generateJitsiRoom, jitsiUrl, jitsiJoinInfo } from "../utils/jitsi";
 import { alias } from "drizzle-orm/pg-core";
 
 const router = Router();
@@ -53,6 +53,25 @@ router.post("/", requireAuth, async (req: AuthedRequest, res) => {
     );
   }
   res.status(201).json({ ...meeting, joinUrl: jitsiUrl(room) });
+});
+
+router.get("/:id/join", requireAuth, async (req: AuthedRequest, res) => {
+  const [meeting] = await db.select().from(meetings).where(eq(meetings.id, req.params.id)).limit(1);
+  if (!meeting) return res.status(404).json({ error: "Introuvable" });
+
+  const isHost = meeting.hostId === req.userId;
+  if (!isHost && req.userRole !== "ADMIN") {
+    const [invite] = await db
+      .select()
+      .from(meetingInvites)
+      .where(and(eq(meetingInvites.meetingId, meeting.id), eq(meetingInvites.userId, req.userId!)))
+      .limit(1);
+    if (!invite) return res.status(403).json({ error: "Vous n'êtes pas invité(e) à cette réunion" });
+  }
+  if (meeting.status === "ANNULEE") return res.status(409).json({ error: "Réunion annulée" });
+
+  const [me] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+  res.json(jitsiJoinInfo(meeting.jitsiRoom, me, isHost || req.userRole === "ADMIN"));
 });
 
 router.patch("/:id", requireAuth, async (req, res) => {
