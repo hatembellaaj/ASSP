@@ -50,7 +50,9 @@ services:
       # déjà en place sur le serveur : il détecte ces variables et génère seul la
       # configuration + le certificat HTTPS pour ce domaine.
       VIRTUAL_HOST: ${DOMAIN:-mouvplus.com},www.${DOMAIN:-mouvplus.com}
-      LETSENCRYPT_HOST: ${DOMAIN:-mouvplus.com},www.${DOMAIN:-mouvplus.com}
+      # www.mouvplus.com pointe vers la redirection Gandi : ne pas le demander à
+      # Let's Encrypt, sinon la validation échoue et AUCUN certificat n'est émis.
+      LETSENCRYPT_HOST: ${DOMAIN:-mouvplus.com}
       LETSENCRYPT_EMAIL: ${LETSENCRYPT_EMAIL:-contact@mouvplus.com}
     ports:
       - "${FRONTEND_PORT:-18400}:80"
