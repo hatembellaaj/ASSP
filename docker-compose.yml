@@ -65,7 +65,7 @@ services:
   # jeton (JWT) valable pour UNE salle ; le coach y est modérateur.
   # ===================================================================
   jitsi-web:
-    image: jitsi/web:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    image: ${JITSI_IMAGE_REPO:-ghcr.io/jitsi}/web:${JITSI_IMAGE_VERSION:-stable-11248-1}
     restart: unless-stopped
     depends_on:
       - jitsi-jvb
@@ -94,7 +94,7 @@ services:
       - studyassur_app-network
 
   jitsi-prosody:
-    image: jitsi/prosody:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    image: ${JITSI_IMAGE_REPO:-ghcr.io/jitsi}/prosody:${JITSI_IMAGE_VERSION:-stable-11248-1}
     restart: unless-stopped
     expose:
       - "5222"
@@ -122,7 +122,7 @@ services:
           - xmpp.meet.jitsi
 
   jitsi-jicofo:
-    image: jitsi/jicofo:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    image: ${JITSI_IMAGE_REPO:-ghcr.io/jitsi}/jicofo:${JITSI_IMAGE_VERSION:-stable-11248-1}
     restart: unless-stopped
     depends_on:
       - jitsi-prosody
@@ -139,7 +139,7 @@ services:
       - meet.jitsi
 
   jitsi-jvb:
-    image: jitsi/jvb:${JITSI_IMAGE_VERSION:-stable-11248-1}
+    image: ${JITSI_IMAGE_REPO:-ghcr.io/jitsi}/jvb:${JITSI_IMAGE_VERSION:-stable-11248-1}
     restart: unless-stopped
     depends_on:
       - jitsi-prosody
