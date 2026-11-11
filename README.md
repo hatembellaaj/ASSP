@@ -71,9 +71,15 @@ micro sur une page HTTP comme `http://mouvplus.com:18400`.
 Une salle ouverte directement sur `https://meet.mouvplus.com/...` sans passer par l'application est
 refusée : seul le backend MouvPlus peut délivrer l'accès.
 
-### Comptes utilisateurs
+### Comptes utilisateurs et séances
 
-Créez vos vrais comptes depuis le serveur (le mot de passe généré s'affiche une seule fois ; il se change
+Au quotidien, l'administrateur crée les comptes depuis le site : **Utilisateurs → + Ajouter un utilisateur**
+(rôle *Adhérent* pour les personnes qui s'entraînent, *Entraîneur* pour le coach). Le mot de passe provisoire
+s'affiche une fois ; « Réinitialiser le mot de passe » en génère un nouveau. Le coach planifie ensuite les
+séances visio depuis **Espace Coach sportif → + Planifier une séance** ; elles apparaissent chez l'adhérent dans
+« Mes séances » avec le bouton « Rejoindre ».
+
+Le tout premier compte ADMIN (et tout compte en dépannage) se crée depuis le serveur (le mot de passe généré s'affiche une seule fois ; il se change
 ensuite dans « Mon profil ») :
 
 ```bash

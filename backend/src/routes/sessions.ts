@@ -1,7 +1,8 @@
 import { Router } from "express";
 import { eq, and, gte, lt, desc, asc } from "drizzle-orm";
 import { db, newId } from "../db";
-import { sessionsTable, users } from "../db/schema";
+import { sessionsTable, users, notifications } from "../db/schema";
+import { z } from "zod";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { generateJitsiRoom, jitsiUrl, jitsiJoinInfo } from "../utils/jitsi";
 import { alias } from "drizzle-orm/pg-core";
@@ -80,30 +81,84 @@ router.get("/calendar", requireAuth, async (req: AuthedRequest, res) => {
   );
 });
 
-router.post("/", requireAuth, async (req: AuthedRequest, res) => {
-  const { coachId, memberId, type, scheduledAt, durationMin, notes } = req.body;
-  const effectiveMemberId = req.userRole === "MEMBRE" ? req.userId! : memberId;
-  const room = generateJitsiRoom("seance");
+const createSchema = z.object({
+  memberId: z.string().optional(),
+  coachId: z.string().optional(),
+  type: z.enum(["INDIVIDUEL", "GROUPE"]).optional(),
+  scheduledAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Date invalide"),
+  durationMin: z.number().int().min(15).max(180).optional(),
+  notes: z.string().max(2000).optional(),
+});
 
+// Planifier une séance.
+// - Coach / conseiller : il est le coach de la séance, choisit l'adhérent → « Planifiée ».
+// - Admin : choisit coach et adhérent → « Planifiée ».
+// - Adhérent : demande une séance à un coach → « À confirmer ».
+router.post("/", requireAuth, async (req: AuthedRequest, res) => {
+  const parsed = createSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
+  const body = parsed.data;
+
+  const isIntervenant = req.userRole === "ENTRAINEUR" || req.userRole === "CONSEILLER";
+  const coachId = isIntervenant ? req.userId! : body.coachId;
+  const memberId = req.userRole === "MEMBRE" ? req.userId! : body.memberId;
+  if (!coachId || !memberId) return res.status(400).json({ error: "Coach et adhérent requis" });
+
+  const [coach] = await db.select().from(users).where(eq(users.id, coachId)).limit(1);
+  const [member] = await db.select().from(users).where(eq(users.id, memberId)).limit(1);
+  if (!coach || !["ENTRAINEUR", "CONSEILLER"].includes(coach.role)) {
+    return res.status(400).json({ error: "Coach introuvable" });
+  }
+  if (!member || member.role !== "MEMBRE") return res.status(400).json({ error: "Adhérent introuvable" });
+
+  const scheduledAt = new Date(body.scheduledAt);
+  if (scheduledAt.getTime() < Date.now() - 5 * 60000) {
+    return res.status(400).json({ error: "La date de la séance est déjà passée" });
+  }
+
+  const room = generateJitsiRoom("seance");
   const [session] = await db
     .insert(sessionsTable)
     .values({
       id: newId(),
       coachId,
-      memberId: effectiveMemberId,
-      type: type || "INDIVIDUEL",
-      scheduledAt: new Date(scheduledAt),
-      durationMin: durationMin || 45,
-      status: "A_CONFIRMER",
+      memberId,
+      type: body.type || "INDIVIDUEL",
+      scheduledAt,
+      durationMin: body.durationMin || 45,
+      status: req.userRole === "MEMBRE" ? "A_CONFIRMER" : "PLANIFIEE",
       jitsiRoom: room,
-      notes,
+      notes: body.notes,
     })
     .returning();
+
+  await db.insert(notifications).values({
+    id: newId(),
+    userId: req.userRole === "MEMBRE" ? coachId : memberId,
+    message:
+      req.userRole === "MEMBRE"
+        ? `Nouvelle demande de séance de ${member.firstName} ${member.lastName}`
+        : `Nouvelle séance planifiée avec ${coach.firstName} ${coach.lastName}`,
+  });
+
   res.status(201).json({ ...session, joinUrl: jitsiUrl(room) });
 });
 
-router.patch("/:id/status", requireAuth, async (req, res) => {
+const STATUSES = ["PLANIFIEE", "A_CONFIRMER", "EFFECTUEE", "ANNULEE"] as const;
+
+router.patch("/:id/status", requireAuth, async (req: AuthedRequest, res) => {
   const { status } = req.body;
+  if (!STATUSES.includes(status)) return res.status(400).json({ error: "Statut invalide" });
+
+  const [existing] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, req.params.id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Introuvable" });
+  const isCoach = existing.coachId === req.userId;
+  const isMember = existing.memberId === req.userId;
+  // L'adhérent peut seulement annuler ; le coach et l'admin peuvent tout changer.
+  if (!(isCoach || req.userRole === "ADMIN" || (isMember && status === "ANNULEE"))) {
+    return res.status(403).json({ error: "Action non autorisée" });
+  }
+
   const [session] = await db
     .update(sessionsTable)
     .set({ status })
