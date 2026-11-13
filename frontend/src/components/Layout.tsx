@@ -1,19 +1,21 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, Navigate, useLocation } from "react-router-dom";
-import { useAuth } from "../context/AuthContext";
+import { useAuth, isFollowed } from "../context/AuthContext";
 
 interface NavItem {
   to: string;
   label: string;
   icon: string;
   roles?: Array<"ADMIN" | "ENTRAINEUR" | "CONSEILLER" | "MEMBRE">;
+  /** Visible seulement après l'entretien d'accueil avec le conseiller */
+  afterInterview?: boolean;
 }
 
 const NAV_ITEMS: NavItem[] = [
   { to: "/communaute", label: "Communauté", icon: "💬" },
   { to: "/tableau-de-bord", label: "Tableau de bord", icon: "🏠", roles: ["MEMBRE"] },
   { to: "/calendrier", label: "Mon calendrier", icon: "📅" },
-  { to: "/cours", label: "Cours disponibles", icon: "🗓️", roles: ["MEMBRE"] },
+  { to: "/cours", label: "Cours disponibles", icon: "🗓️", roles: ["MEMBRE"], afterInterview: true },
   { to: "/seances", label: "Mes séances", icon: "🎥" },
   { to: "/programme", label: "Mon programme", icon: "🗂️", roles: ["MEMBRE"] },
   { to: "/progression", label: "Ma progression", icon: "📈", roles: ["MEMBRE"] },
@@ -63,7 +65,9 @@ export default function Layout() {
   }
   if (!user) return <Navigate to="/login" replace />;
 
-  const items = NAV_ITEMS.filter((item) => !item.roles || item.roles.includes(user.role));
+  const items = NAV_ITEMS.filter(
+    (item) => (!item.roles || item.roles.includes(user.role)) && (!item.afterInterview || isFollowed(user))
+  );
 
   return (
     <div className="flex h-dvh overflow-hidden bg-slate-100">

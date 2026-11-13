@@ -5,6 +5,8 @@ import { fr } from "date-fns/locale";
 import { api } from "../api/client";
 import { PageHeader } from "../components/Layout";
 import { Button, Card, EmptyState, Loading } from "../components/ui";
+import { useAuth, isFollowed } from "../context/AuthContext";
+import { Navigate } from "react-router-dom";
 
 interface Course {
   id: string;
@@ -21,6 +23,7 @@ interface Course {
 
 /** Catalogue des cours ouverts : l'adhérent s'y inscrit ou s'en désinscrit lui-même. */
 export default function Courses() {
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const [message, setMessage] = useState<{ type: "ok" | "error"; text: string } | null>(null);
 
@@ -57,6 +60,9 @@ export default function Courses() {
   });
 
   const busy = enroll.isPending || leave.isPending;
+
+  // Avant l'entretien d'accueil, le client suit son parcours depuis le tableau de bord.
+  if (!isFollowed(user)) return <Navigate to="/tableau-de-bord" replace />;
 
   return (
     <div>

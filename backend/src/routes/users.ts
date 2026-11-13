@@ -4,7 +4,8 @@ import { randomBytes } from "crypto";
 import { z } from "zod";
 import { eq, desc, asc } from "drizzle-orm";
 import { db, newId } from "../db";
-import { users, intervenantProfiles } from "../db/schema";
+import { users, intervenantProfiles, meetings } from "../db/schema";
+import { ONBOARDING, isFollowed } from "../utils/onboarding";
 import { requireAuth, requireRole, AuthedRequest } from "../middleware/auth";
 
 const router = Router();
@@ -46,6 +47,11 @@ router.post("/", requireAuth, requireRole("ADMIN"), async (req, res) => {
   if (existing) return res.status(409).json({ error: "Un compte existe déjà avec cet email" });
 
   const password = generatePassword();
+  // Un adhérent créé par l'admin suit lui aussi le parcours : entretien avec le conseiller d'abord.
+  const [conseiller] =
+    role === "MEMBRE"
+      ? await db.select({ id: users.id }).from(users).where(eq(users.role, "CONSEILLER")).orderBy(asc(users.createdAt)).limit(1)
+      : [];
   const [user] = await db
     .insert(users)
     .values({
@@ -56,6 +62,8 @@ router.post("/", requireAuth, requireRole("ADMIN"), async (req, res) => {
       role,
       phone: phone || null,
       passwordHash: await bcrypt.hash(password, 10),
+      onboarding: role === "MEMBRE" ? ONBOARDING.A_CONTACTER : null,
+      conseillerId: conseiller?.id ?? null,
     })
     .returning();
 
@@ -78,6 +86,30 @@ router.post("/:id/reset-password", requireAuth, requireRole("ADMIN"), async (req
     .set({ passwordHash: await bcrypt.hash(password, 10), updatedAt: new Date() })
     .where(eq(users.id, user.id));
   res.json({ email: user.email, password });
+});
+
+// Parcours de l'adhérent connecté : étape, conseiller, entretien d'accueil.
+router.get("/me/parcours", requireAuth, async (req: AuthedRequest, res) => {
+  const [me] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+  if (!me) return res.status(404).json({ error: "Introuvable" });
+  const [conseiller] = me.conseillerId
+    ? await db
+        .select({ firstName: users.firstName, lastName: users.lastName })
+        .from(users)
+        .where(eq(users.id, me.conseillerId))
+        .limit(1)
+    : [];
+  const [interview] = me.interviewMeetingId
+    ? await db.select().from(meetings).where(eq(meetings.id, me.interviewMeetingId)).limit(1)
+    : [];
+  res.json({
+    onboarding: isFollowed(me.onboarding) ? ONBOARDING.SUIVI : me.onboarding,
+    conseiller: conseiller || null,
+    interview:
+      interview && interview.status !== "ANNULEE"
+        ? { id: interview.id, scheduledAt: interview.scheduledAt, status: interview.status }
+        : null,
+  });
 });
 
 router.get("/:id", requireAuth, async (req, res) => {

@@ -12,6 +12,8 @@ export interface CurrentUser {
   avatarColor: string;
   bio?: string | null;
   phone?: string | null;
+  /** Parcours d'un nouvel adhérent : A_CONTACTER → ENTRETIEN_PLANIFIE → SUIVI (null = suivi) */
+  onboarding?: "A_CONTACTER" | "ENTRETIEN_PLANIFIE" | "SUIVI" | null;
   intervenantProfile?: {
     specialty: string;
     hourlyRate: number;
@@ -88,4 +90,9 @@ export function useAuth() {
   const ctx = useContext(AuthContext);
   if (!ctx) throw new Error("useAuth doit être utilisé dans AuthProvider");
   return ctx;
+}
+
+/** L'adhérent a fait son entretien d'accueil avec le conseiller (ou son compte est antérieur au parcours). */
+export function isFollowed(user: Pick<CurrentUser, "onboarding"> | null | undefined): boolean {
+  return !user?.onboarding || user.onboarding === "SUIVI";
 }

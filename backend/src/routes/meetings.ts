@@ -74,7 +74,13 @@ router.get("/:id/join", requireAuth, async (req: AuthedRequest, res) => {
   res.json(jitsiJoinInfo(meeting.jitsiRoom, me, isHost || req.userRole === "ADMIN"));
 });
 
-router.patch("/:id", requireAuth, async (req, res) => {
+router.patch("/:id", requireAuth, async (req: AuthedRequest, res) => {
+  const [existing] = await db.select().from(meetings).where(eq(meetings.id, req.params.id)).limit(1);
+  if (!existing) return res.status(404).json({ error: "Introuvable" });
+  // Seul l'organisateur (ou l'admin) modifie une réunion
+  if (existing.hostId !== req.userId && req.userRole !== "ADMIN") {
+    return res.status(403).json({ error: "Action non autorisée" });
+  }
   const { status, summary } = req.body;
   const [meeting] = await db.update(meetings).set({ status, summary }).where(eq(meetings.id, req.params.id)).returning();
   res.json(meeting);

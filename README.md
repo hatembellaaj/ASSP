@@ -79,9 +79,17 @@ s'affiche une fois ; « Réinitialiser le mot de passe » en génère un nouveau
 séances visio depuis **Espace Coach sportif → + Planifier une séance** ; elles apparaissent chez l'adhérent dans
 « Mes séances » avec le bouton « Rejoindre ».
 
+**Parcours client → conseiller sportif → coach** : un nouvel adhérent (inscription publique ou compte créé par
+l'admin) démarre en `users.onboarding = A_CONTACTER`, avec ses disponibilités (`users.availability`). Il apparaît
+dans « Nouveaux clients » de l'Espace Conseiller ; le conseiller fixe l'entretien d'accueil en visio (une réunion,
+`POST /api/conseiller/clients/:id/entretien` → `ENTRETIEN_PLANIFIE`), puis planifie ses séances avec un coach
+(`POST /api/sessions/series` : 1 à 24 séances, hebdomadaires ou toutes les 2 semaines, refus si le coach a déjà
+une séance au même moment) → `SUIVI`. Les comptes antérieurs (`onboarding` nul) sont considérés comme suivis.
+Le backend tourne en `TZ=Europe/Paris` pour que les séries gardent la même heure locale toute l'année.
+
 **Inscription publique** : tout visiteur peut créer un compte sur `/inscription` (ou « S'inscrire » sur l'accueil).
-Le compte créé est toujours un *Adhérent* (rôle forcé côté serveur) ; il arrive sur **Cours disponibles**, où il
-s'inscrit aux **cours ouverts** publiés par les coachs (`sessions.is_open`, `capacity` de 1 à 20 places,
+Le compte créé est toujours un *Adhérent* (rôle forcé côté serveur). Après son entretien, il peut aussi
+s'inscrire aux **cours ouverts** publiés par les coachs (`sessions.is_open`, `capacity` de 1 à 20 places,
 `POST/DELETE /api/sessions/:id/enroll`, capacité garantie par un verrou `FOR UPDATE`). Un adhérent ne voit pas
 les noms des autres inscrits d'un cours ouvert.
 

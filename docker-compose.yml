@@ -26,6 +26,8 @@ services:
       JWT_SECRET: ${JWT_SECRET:-change-me-in-production}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       PORT: 4000
+      # Fuseau horaire des séances récurrentes (même heure locale toute l'année) et des notifications
+      TZ: ${TZ:-Europe/Paris}
       CORS_ORIGIN: ${CORS_ORIGIN:-*}
       # Visio : instance Jitsi auto-hébergée ci-dessous (services jitsi-*).
       JITSI_DOMAIN: ${JITSI_DOMAIN:-meet.mouvplus.com}

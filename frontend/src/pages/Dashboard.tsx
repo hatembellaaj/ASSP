@@ -5,8 +5,12 @@ import { api } from "../api/client";
 import { PageHeader } from "../components/Layout";
 import { Card, StatCard, ProgressBar, Loading, EmptyState } from "../components/ui";
 import { Link } from "react-router-dom";
+import JourneyCard from "../components/JourneyCard";
+import { useAuth, isFollowed } from "../context/AuthContext";
 
 export default function Dashboard() {
+  const { user } = useAuth();
+  const followed = isFollowed(user);
   const { data, isLoading } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => (await api.get("/dashboard")).data,
@@ -24,13 +28,19 @@ export default function Dashboard() {
           <div>
             <div className="text-sm text-brand-100">Bonjour{data.user?.firstName ? ` ${data.user.firstName}` : ""} 👋</div>
             <div className="text-lg font-semibold">
-              Plan {data.user?.plan === "PREMIUM" ? "Premium" : "Standard"} — continuez comme ça !
+              {followed
+                ? `Plan ${data.user?.plan === "PREMIUM" ? "Premium" : "Standard"} — continuez comme ça !`
+                : "Bienvenue ! Première étape : votre entretien avec le conseiller sportif."}
             </div>
           </div>
-          <Link to="/cours" className="self-start whitespace-nowrap rounded-lg bg-white/15 px-4 py-2 text-sm font-medium hover:bg-white/25 sm:self-auto">
-            S'inscrire à un cours →
-          </Link>
+          {followed && (
+            <Link to="/cours" className="self-start whitespace-nowrap rounded-lg bg-white/15 px-4 py-2 text-sm font-medium hover:bg-white/25 sm:self-auto">
+              S'inscrire à un cours →
+            </Link>
+          )}
         </div>
+
+        <JourneyCard />
 
         <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard icon="✅" label="Séances effectuées" value={data.stats.seancesEffectuees} />

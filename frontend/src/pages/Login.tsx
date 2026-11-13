@@ -4,6 +4,8 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 import { Button } from "../components/ui";
 import asspLogo from "../assets/assp-logo.png";
+import AvailabilityGrid from "../components/AvailabilityGrid";
+import type { Availability } from "../components/AvailabilityGrid";
 
 // Palette reprise du flyer ASSP (couleurs échantillonnées directement sur le document d'origine)
 const NAVY = "#1a2530";
@@ -16,14 +18,16 @@ export default function Login({ initialView = "home" }: { initialView?: "home" |
   const navigate = useNavigate();
   const [view, setView] = useState<"home" | "login" | "register">(initialView);
   const [justRegistered, setJustRegistered] = useState(false);
+  const [availability, setAvailability] = useState<Availability>({});
+  const [availabilityNote, setAvailabilityNote] = useState("");
   const [signup, setSignup] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "", confirm: "" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  // Après une inscription, on emmène directement l'adhérent vers les cours disponibles.
-  if (user) return <Navigate to={justRegistered ? "/cours" : "/"} replace />;
+  // Après une inscription, l'adhérent arrive sur son tableau de bord (étape suivante : l'entretien).
+  if (user) return <Navigate to={justRegistered ? "/tableau-de-bord" : "/"} replace />;
 
   const goTo = (v: "home" | "login" | "register") => {
     setError(null);
@@ -36,6 +40,9 @@ export default function Login({ initialView = "home" }: { initialView?: "home" |
     setError(null);
     if (signup.password.length < 8) return setError("Le mot de passe doit faire au moins 8 caractères");
     if (signup.password !== signup.confirm) return setError("Les deux mots de passe ne correspondent pas");
+    if (Object.keys(availability).length === 0 && !availabilityNote.trim()) {
+      return setError("Indiquez au moins un créneau où vous êtes disponible, pour que votre conseiller puisse vous proposer des horaires");
+    }
     setLoading(true);
     setJustRegistered(true);
     try {
@@ -45,6 +52,8 @@ export default function Login({ initialView = "home" }: { initialView?: "home" |
         email: signup.email,
         phone: signup.phone || undefined,
         password: signup.password,
+        availability,
+        availabilityNote: availabilityNote.trim() || undefined,
       });
     } catch (err: any) {
       setJustRegistered(false);
@@ -209,7 +218,7 @@ export default function Login({ initialView = "home" }: { initialView?: "home" |
 
           <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
             <Button onClick={() => goTo("register")} className="w-full sm:w-auto">
-              Créer mon compte et m'inscrire à un cours
+              Créer mon compte
             </Button>
             <Button variant="secondary" onClick={() => goTo("login")} className="w-full sm:w-auto">
               J'ai déjà un compte
@@ -221,7 +230,8 @@ export default function Login({ initialView = "home" }: { initialView?: "home" |
           <div className="w-full max-w-md rounded-2xl border border-slate-100 p-6 shadow-sm sm:p-8">
             <h1 className="mb-1 text-xl font-semibold text-slate-900">Créer mon compte</h1>
             <p className="mb-6 text-sm text-slate-500">
-              Gratuit. Vous pourrez ensuite vous inscrire aux cours proposés par nos coachs.
+              Gratuit. Votre conseiller sportif vous proposera ensuite un premier entretien en visio pour bâtir votre
+              programme avec un coach.
             </p>
             <form onSubmit={handleRegister} className="space-y-4">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
@@ -292,6 +302,22 @@ export default function Login({ initialView = "home" }: { initialView?: "home" |
                   value={signup.confirm}
                   onChange={(e) => setSignup({ ...signup, confirm: e.target.value })}
                   className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Mes disponibilités</label>
+                <p className="mb-2 text-xs text-slate-500">
+                  Cochez les moments où vous pourriez faire vos séances. Votre conseiller s'en servira pour planifier
+                  l'entretien et vos séances avec le coach.
+                </p>
+                <AvailabilityGrid value={availability} onChange={setAvailability} />
+                <textarea
+                  value={availabilityNote}
+                  onChange={(e) => setAvailabilityNote(e.target.value)}
+                  rows={2}
+                  maxLength={500}
+                  className={`${field} mt-2`}
+                  placeholder="Précisions (facultatif) : ex. « pas le mercredi pendant les vacances scolaires »"
                 />
               </div>
               {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>}

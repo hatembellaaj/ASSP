@@ -1,9 +1,10 @@
 import { Router } from "express";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { eq, sql } from "drizzle-orm";
+import { asc, eq, sql } from "drizzle-orm";
 import { db, newId } from "../db";
-import { users, intervenantProfiles } from "../db/schema";
+import { users, intervenantProfiles, notifications } from "../db/schema";
+import { ONBOARDING, cleanAvailability } from "../utils/onboarding";
 import { signToken } from "../lib/jwt";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 
@@ -15,12 +16,15 @@ const registerSchema = z.object({
   firstName: z.string().trim().min(1, "Prénom requis").max(80),
   lastName: z.string().trim().min(1, "Nom requis").max(80),
   phone: z.string().trim().max(30).optional(),
+  // Disponibilités : { lun: ["matin", "soir"], … } et précisions libres
+  availability: z.record(z.array(z.string())).optional(),
+  availabilityNote: z.string().trim().max(500).optional(),
 });
 
 router.post("/register", async (req, res) => {
   const parsed = registerSchema.safeParse(req.body);
   if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0]?.message || "Données invalides" });
-  const { email, password, firstName, lastName, phone } = parsed.data;
+  const { email, password, firstName, lastName, phone, availability, availabilityNote } = parsed.data;
   // Inscription publique : toujours un compte Adhérent. Les comptes coach /
   // conseiller / admin se créent côté serveur (src/db/create-user.ts).
   const role = "MEMBRE" as const;
@@ -34,10 +38,38 @@ router.post("/register", async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const id = newId();
+  // Parcours : le nouveau client voit d'abord un conseiller sportif (le premier conseiller du club).
+  const conseillers = await db
+    .select({ id: users.id })
+    .from(users)
+    .where(eq(users.role, "CONSEILLER"))
+    .orderBy(asc(users.createdAt));
   const [user] = await db
     .insert(users)
-    .values({ id, email, passwordHash, firstName, lastName, role, phone: phone || null })
+    .values({
+      id,
+      email,
+      passwordHash,
+      firstName,
+      lastName,
+      role,
+      phone: phone || null,
+      onboarding: ONBOARDING.A_CONTACTER,
+      availability: cleanAvailability(availability),
+      availabilityNote: availabilityNote || null,
+      conseillerId: conseillers[0]?.id ?? null,
+    })
     .returning();
+
+  if (conseillers.length) {
+    await db.insert(notifications).values(
+      conseillers.map((c) => ({
+        id: newId(),
+        userId: c.id,
+        message: `Nouveau client à contacter : ${firstName} ${lastName}${phone ? ` (${phone})` : ""}`,
+      }))
+    );
+  }
 
   const token = signToken({ sub: user.id, role: user.role });
   res.status(201).json({ token, user: sanitize(user) });

@@ -1,11 +1,13 @@
 import { Router } from "express";
-import { eq, and, gte, lt, desc, asc, inArray } from "drizzle-orm";
+import { eq, and, gte, lt, desc, asc, inArray, or, ne } from "drizzle-orm";
 import { db, newId } from "../db";
 import { sessionsTable, sessionParticipants, users, notifications } from "../db/schema";
 import { z } from "zod";
 import { requireAuth, AuthedRequest } from "../middleware/auth";
 import { generateJitsiRoom, jitsiUrl, jitsiJoinInfo } from "../utils/jitsi";
 import { participantsBySession, sessionIdsOfMember } from "../utils/sessionParticipants";
+import { isFollowed } from "../utils/onboarding";
+import { markFollowed } from "./conseiller";
 import { alias } from "drizzle-orm/pg-core";
 
 const router = Router();
@@ -28,9 +30,31 @@ const isIntervenantRole = (role?: string) => role === "ENTRAINEUR" || role === "
 
 /** Séances visibles par l'utilisateur : celles qu'il anime (coach) ou auxquelles il participe (adhérent). */
 function visibleSessionsClause(req: AuthedRequest) {
-  return isIntervenantRole(req.userRole)
+  if (req.userRole === "CONSEILLER") {
+    // Le conseiller voit les séances qu'il anime et celles qu'il a planifiées pour ses clients
+    return or(eq(sessionsTable.coachId, req.userId!), eq(sessionsTable.plannedById, req.userId!))!;
+  }
+  return req.userRole === "ENTRAINEUR"
     ? eq(sessionsTable.coachId, req.userId!)
     : inArray(sessionsTable.id, sessionIdsOfMember(req.userId!));
+}
+
+/** Séances non annulées du coach qui chevauchent [start, start + durationMin). */
+async function coachConflicts(coachId: string, start: Date, durationMin: number) {
+  const dayBefore = new Date(start.getTime() - 24 * 3600000);
+  const end = new Date(start.getTime() + durationMin * 60000);
+  const rows = await db
+    .select({ scheduledAt: sessionsTable.scheduledAt, durationMin: sessionsTable.durationMin })
+    .from(sessionsTable)
+    .where(
+      and(
+        eq(sessionsTable.coachId, coachId),
+        ne(sessionsTable.status, "ANNULEE"),
+        gte(sessionsTable.scheduledAt, dayBefore),
+        lt(sessionsTable.scheduledAt, end)
+      )
+    );
+  return rows.filter((r) => r.scheduledAt.getTime() + r.durationMin * 60000 > start.getTime());
 }
 
 async function isParticipant(sessionId: string, memberId: string): Promise<boolean> {
@@ -134,7 +158,8 @@ router.post("/", requireAuth, async (req: AuthedRequest, res) => {
   // Seuls le coach et l'admin ouvrent un cours aux inscriptions
   const isOpen = !isMembre && !!body.isOpen;
   const capacity = isOpen ? body.capacity ?? 10 : null;
-  const coachId = isIntervenantRole(req.userRole) ? req.userId! : body.coachId;
+  // Le coach planifie pour lui-même ; le conseiller et l'admin choisissent le coach.
+  const coachId = req.userRole === "ENTRAINEUR" ? req.userId! : body.coachId;
   const memberIds = isMembre
     ? [req.userId!]
     : [...new Set(body.memberIds || (body.memberId ? [body.memberId] : []))];
@@ -177,6 +202,7 @@ router.post("/", requireAuth, async (req: AuthedRequest, res) => {
         title: body.title || null,
         isOpen,
         capacity,
+        plannedById: req.userId!,
       })
       .returning();
 
@@ -262,13 +288,107 @@ router.put("/:id/participants", requireAuth, async (req: AuthedRequest, res) => 
   res.json({ id: session.id, participants });
 });
 
+const seriesSchema = z.object({
+  memberId: z.string(),
+  coachId: z.string(),
+  firstAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Date invalide"),
+  count: z.number().int().min(1).max(24),
+  intervalDays: z.union([z.literal(7), z.literal(14)]).optional(),
+  durationMin: z.number().int().min(15).max(180).optional(),
+  title: z.string().trim().max(120).optional(),
+  notes: z.string().max(2000).optional(),
+});
+
+// Le conseiller planifie, après l'entretien, une ou plusieurs séances du client avec un coach
+// (ex : 12 séances, chaque mardi à 10 h). Le client passe en « suivi ».
+router.post("/series", requireAuth, async (req: AuthedRequest, res) => {
+  if (req.userRole !== "CONSEILLER" && req.userRole !== "ADMIN") {
+    return res.status(403).json({ error: "Réservé au conseiller sportif" });
+  }
+  const parsed = seriesSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: "Données invalides" });
+  const b = parsed.data;
+  const durationMin = b.durationMin || 45;
+  const interval = b.intervalDays || 7;
+
+  const [coach] = await db.select().from(users).where(eq(users.id, b.coachId)).limit(1);
+  if (!coach || coach.role !== "ENTRAINEUR") return res.status(400).json({ error: "Coach introuvable" });
+  const [member] = await db.select().from(users).where(eq(users.id, b.memberId)).limit(1);
+  if (!member || member.role !== "MEMBRE") return res.status(400).json({ error: "Client introuvable" });
+
+  const first = new Date(b.firstAt);
+  if (first.getTime() < Date.now() - 5 * 60000) {
+    return res.status(400).json({ error: "La date de la première séance est déjà passée" });
+  }
+  // Même heure locale chaque semaine (le passage à l'heure d'hiver/été ne décale pas la séance)
+  const dates = Array.from({ length: b.count }, (_, i) => {
+    const d = new Date(first);
+    d.setDate(d.getDate() + i * interval);
+    return d;
+  });
+
+  const conflicts: string[] = [];
+  for (const d of dates) {
+    if ((await coachConflicts(coach.id, d, durationMin)).length) conflicts.push(d.toISOString());
+  }
+  if (conflicts.length) {
+    return res.status(409).json({
+      error: `${coach.firstName} ${coach.lastName} a déjà une séance à ${conflicts.length} de ces dates`,
+      conflicts,
+    });
+  }
+
+  const created = await db.transaction(async (tx) => {
+    const ids: string[] = [];
+    for (const d of dates) {
+      const id = newId();
+      ids.push(id);
+      await tx.insert(sessionsTable).values({
+        id,
+        coachId: coach.id,
+        memberId: null,
+        type: "INDIVIDUEL",
+        scheduledAt: d,
+        durationMin,
+        status: "PLANIFIEE",
+        jitsiRoom: generateJitsiRoom("seance"),
+        notes: b.notes,
+        title: b.title || null,
+        plannedById: req.userId!,
+      });
+      await tx.insert(sessionParticipants).values({ sessionId: id, memberId: member.id });
+    }
+    const when = first.toLocaleString("fr-FR", {
+      timeZone: process.env.TZ || "Europe/Paris",
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+    const what = b.count > 1 ? `${b.count} séances` : "1 séance";
+    await tx.insert(notifications).values([
+      { id: newId(), userId: member.id, message: `${what} planifiée${b.count > 1 ? "s" : ""} avec ${coach.firstName} ${coach.lastName}, à partir du ${when}` },
+      { id: newId(), userId: coach.id, message: `${what} planifiée${b.count > 1 ? "s" : ""} avec ${member.firstName} ${member.lastName}, à partir du ${when}` },
+    ]);
+    return ids;
+  });
+
+  if (!isFollowed(member.onboarding)) await markFollowed(member.id, member.interviewMeetingId);
+  res.status(201).json({ created: created.length, ids: created });
+});
+
 /** Un cours accepte encore des inscriptions : ouvert, non annulé, pas encore terminé. */
 function acceptsEnrollment(s: typeof sessionsTable.$inferSelect): boolean {
   return s.isOpen && s.status !== "ANNULEE" && s.status !== "EFFECTUEE" && s.scheduledAt.getTime() + s.durationMin * 60000 > Date.now();
 }
 
-// Cours ouverts aux inscriptions (catalogue vu par les adhérents).
+// Cours ouverts aux inscriptions (catalogue vu par les adhérents, après l'entretien d'accueil).
 router.get("/available", requireAuth, async (req: AuthedRequest, res) => {
+  if (req.userRole === "MEMBRE") {
+    const [me] = await db.select({ onboarding: users.onboarding }).from(users).where(eq(users.id, req.userId!)).limit(1);
+    if (!isFollowed(me?.onboarding)) return res.json([]);
+  }
   const rows = await db
     .select({
       session: sessionsTable,
@@ -304,6 +424,10 @@ router.get("/available", requireAuth, async (req: AuthedRequest, res) => {
 // S'inscrire à un cours ouvert (adhérent).
 router.post("/:id/enroll", requireAuth, async (req: AuthedRequest, res) => {
   if (req.userRole !== "MEMBRE") return res.status(403).json({ error: "Réservé aux adhérents" });
+  const [me] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+  if (!isFollowed(me?.onboarding)) {
+    return res.status(403).json({ error: "Les inscriptions aux cours s'ouvrent après votre entretien avec le conseiller sportif" });
+  }
 
   const result = await db.transaction(async (tx) => {
     // Verrou sur la séance : deux inscriptions simultanées ne peuvent pas dépasser la capacité.

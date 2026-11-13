@@ -7,6 +7,7 @@ import {
   boolean,
   timestamp,
   uniqueIndex,
+  json,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -60,6 +61,15 @@ export const users = pgTable("users", {
   plan: planTypeEnum("plan").notNull().default("STANDARD"),
   avatarColor: text("avatar_color").notNull().default("#2563eb"),
   bio: text("bio"),
+  // Parcours d'un nouvel adhérent : A_CONTACTER → ENTRETIEN_PLANIFIE → SUIVI.
+  // null = compte antérieur au parcours, traité comme SUIVI.
+  onboarding: text("onboarding"),
+  // Disponibilités déclarées à l'inscription : { lun: ["matin", "soir"], … }
+  availability: json("availability").$type<Record<string, string[]>>(),
+  availabilityNote: text("availability_note"),
+  // Conseiller sportif qui suit l'adhérent, et réunion de l'entretien d'accueil
+  conseillerId: text("conseiller_id"),
+  interviewMeetingId: text("interview_meeting_id"),
   createdAt: createdAt(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -116,6 +126,8 @@ export const sessionsTable = pgTable("sessions", {
   // Cours ouvert : les adhérents peuvent s'y inscrire eux-mêmes, dans la limite de `capacity` places
   isOpen: boolean("is_open").notNull().default(false),
   capacity: integer("capacity"),
+  // Qui a planifié la séance (le conseiller sportif, le plus souvent)
+  plannedById: text("planned_by_id"),
   createdAt: createdAt(),
 });
 
