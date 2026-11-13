@@ -12,7 +12,7 @@ export default function Clubs() {
   return (
     <div>
       <PageHeader title="Clubs partenaires" />
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <p className="mb-4 text-sm text-slate-500">Nos clubs partenaires vous accueillent pour vos séances en présentiel.</p>
         {isLoading && <Loading />}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

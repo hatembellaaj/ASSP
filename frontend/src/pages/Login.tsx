@@ -167,7 +167,7 @@ export default function Login() {
         </main>
       ) : (
         <main className="flex justify-center px-6 pb-16">
-          <div className="w-full max-w-md rounded-2xl border border-slate-100 p-8 shadow-sm">
+          <div className="w-full max-w-md rounded-2xl border border-slate-100 p-6 shadow-sm sm:p-8">
             <h1 className="mb-1 text-xl font-semibold text-slate-900">Connexion</h1>
             <p className="mb-6 text-sm text-slate-500">Accédez à votre espace MouvPlus.</p>
             <form onSubmit={handleSubmit} className="space-y-4">

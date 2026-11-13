@@ -22,7 +22,7 @@ export default function Meetings() {
   return (
     <div>
       <PageHeader title="Mes réunions" />
-      <div className="mx-auto max-w-2xl space-y-6 p-8">
+      <div className="mx-auto max-w-2xl space-y-6 p-4 sm:p-6 lg:p-8">
         <p className="text-sm text-slate-500">Retrouvez ici les réunions auxquelles vous êtes convié(e), ainsi que l'historique.</p>
 
         {isLoading && <Loading />}

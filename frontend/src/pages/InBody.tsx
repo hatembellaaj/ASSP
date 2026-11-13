@@ -42,7 +42,7 @@ export default function InBody() {
         title="Mon analyse InBody"
         action={<Button onClick={() => setShowForm((s) => !s)}>{showForm ? "Annuler" : "＋ Nouvelle analyse"}</Button>}
       />
-      <div className="mx-auto max-w-2xl space-y-4 p-8">
+      <div className="mx-auto max-w-2xl space-y-4 p-4 sm:p-6 lg:p-8">
         {showForm && (
           <Card>
             <h3 className="mb-3 text-sm font-semibold text-slate-700">Déposer mes résultats InBody</h3>

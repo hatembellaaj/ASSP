@@ -82,7 +82,7 @@ export default function Community() {
   return (
     <div>
       <PageHeader title="Communauté" />
-      <div className="mx-auto max-w-2xl space-y-4 p-8">
+      <div className="mx-auto max-w-2xl space-y-4 p-4 sm:p-6 lg:p-8">
         <Card>
           <div className="flex gap-3">
             <Avatar firstName={user?.firstName} lastName={user?.lastName} color={user?.avatarColor} />

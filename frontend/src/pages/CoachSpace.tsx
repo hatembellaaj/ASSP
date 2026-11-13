@@ -74,9 +74,9 @@ export default function CoachSpace() {
         title="Espace Coach sportif"
         action={!showForm && <Button onClick={() => setShowForm(true)}>+ Planifier une séance</Button>}
       />
-      <div className="space-y-6 p-8">
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
         {showForm && <ScheduleSessionForm onDone={() => setShowForm(false)} />}
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+        <div className="grid grid-cols-3 gap-2 sm:gap-4">
           <StatCard icon="🎥" label="Séances données" value={done.length} />
           <StatCard icon="📅" label="Séances à venir" value={upcoming.length} />
           <StatCard icon="👥" label="Adhérents suivis" value={uniqueMembers} />
@@ -110,7 +110,7 @@ export default function CoachSpace() {
                       <div className="mt-1 text-xs text-slate-500">{participantsFullList(s)}</div>
                     )}
                   </div>
-                  <div className="flex items-center gap-2">
+                  <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
                     <StatusPill status={s.status} />
                     <Button variant="ghost" onClick={() => setEditing(editing === s.id ? null : s.id)}>
                       Participants
@@ -125,7 +125,10 @@ export default function CoachSpace() {
                     >
                       Annuler
                     </Button>
-                    <Button onClick={() => setActive({ id: s.id, title: `Séance · ${participantsLabel(s)}` })}>
+                    <Button
+                      className="w-full sm:w-auto"
+                      onClick={() => setActive({ id: s.id, title: `Séance · ${participantsLabel(s)}` })}
+                    >
                       Rejoindre
                     </Button>
                   </div>

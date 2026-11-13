@@ -42,7 +42,7 @@ export default function ConseillerSpace() {
   return (
     <div>
       <PageHeader title="Espace Conseiller sportif" />
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <p className="mb-4 text-sm text-slate-500">
           Suivi des adhérents : bilan ICOPE, évaluations InBody et programme en cours.
         </p>
@@ -51,10 +51,10 @@ export default function ConseillerSpace() {
         <div className="space-y-3">
           {adherents?.map((a: any) => (
             <Card key={a.id}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
+              <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="flex min-w-0 items-center gap-3">
                   <Avatar firstName={a.firstName} lastName={a.lastName} color={a.avatarColor} />
-                  <div>
+                  <div className="min-w-0">
                     <div className="text-sm font-semibold text-slate-800">
                       {a.firstName} {a.lastName}
                     </div>
@@ -70,7 +70,11 @@ export default function ConseillerSpace() {
                     <div className="font-semibold text-slate-800">{a.nbEvaluationsMusculaires}</div>
                     <div className="text-xs text-slate-400">Éval. musc.</div>
                   </div>
-                  <Button variant="secondary" onClick={() => setEditing(editing === a.id ? null : a.id)}>
+                  <Button
+                    variant="secondary"
+                    className="ml-auto sm:ml-0"
+                    onClick={() => setEditing(editing === a.id ? null : a.id)}
+                  >
                     {editing === a.id ? "Fermer" : "Bilan ICOPE"}
                   </Button>
                 </div>

@@ -155,7 +155,7 @@ export default function AdminUsers() {
           )
         }
       />
-      <div className="space-y-6 p-8">
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
         {creds && <CredentialsCard creds={creds} onClose={() => setCreds(null)} />}
         {showForm && (
           <CreateUserForm
@@ -168,7 +168,36 @@ export default function AdminUsers() {
         )}
 
         {isLoading && <Loading />}
-        <div className="overflow-x-auto rounded-xl border border-slate-200 bg-white">
+        {/* Mobile : une carte par utilisateur */}
+        <div className="space-y-2 sm:hidden">
+          {data?.map((u: any) => (
+            <Card key={u.id} className="space-y-2">
+              <div className="flex items-center gap-3">
+                <Avatar firstName={u.firstName} lastName={u.lastName} color={u.avatarColor} size={32} />
+                <div className="min-w-0">
+                  <div className="truncate text-sm font-medium text-slate-800">
+                    {u.firstName} {u.lastName}
+                  </div>
+                  <div className="truncate text-xs text-slate-500">
+                    {ROLE_LABEL[u.role]} · {u.email}
+                  </div>
+                </div>
+              </div>
+              <Button
+                variant="secondary"
+                className="w-full"
+                disabled={reset.isPending}
+                onClick={() => {
+                  if (confirm(`Générer un nouveau mot de passe pour ${u.firstName} ${u.lastName} ?`)) reset.mutate(u);
+                }}
+              >
+                Réinitialiser le mot de passe
+              </Button>
+            </Card>
+          ))}
+        </div>
+
+        <div className="hidden overflow-x-auto rounded-xl border border-slate-200 bg-white sm:block">
           <table className="w-full text-left text-sm">
             <thead className="bg-slate-50 text-xs uppercase text-slate-500">
               <tr>

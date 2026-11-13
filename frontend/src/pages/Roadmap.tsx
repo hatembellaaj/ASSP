@@ -18,7 +18,7 @@ export default function Roadmap() {
   return (
     <div>
       <PageHeader title="Road Map MouvPlus" />
-      <div className="mx-auto max-w-3xl p-8">
+      <div className="mx-auto max-w-3xl p-4 sm:p-6 lg:p-8">
         <p className="mb-6 text-sm text-slate-500">Vue d'ensemble des chantiers de la plateforme MouvPlus.</p>
         {isLoading && <Loading />}
         {!isLoading && data?.length === 0 && <EmptyState title="Aucun élément de roadmap" />}

@@ -22,14 +22,14 @@ export default function Sessions() {
   return (
     <div>
       <PageHeader title="Mes séances" />
-      <div className="mx-auto max-w-3xl space-y-3 p-8">
+      <div className="mx-auto max-w-3xl space-y-3 p-4 sm:p-6 lg:p-8">
         {isLoading && <Loading />}
         {!isLoading && sessions?.length === 0 && (
           <EmptyState icon="🎥" title="Aucune séance" subtitle="Vos séances de coaching apparaîtront ici." />
         )}
         {sessions?.map((s: any) => (
-          <Card key={s.id} className="flex items-center justify-between">
-            <div>
+          <Card key={s.id} className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <div className="text-sm font-semibold text-slate-800">
                 {sessionParticipants(s).length > 1 ? "Groupe" : "Individuel"} ·{" "}
                 {isIntervenant ? participantsLabel(s) : `${s.coach?.firstName} ${s.coach?.lastName}`}
@@ -42,7 +42,7 @@ export default function Sessions() {
               )}
               {s.notes && <div className="mt-1 text-xs italic text-slate-500">{s.notes}</div>}
             </div>
-            <div className="flex items-center gap-3">
+            <div className="flex shrink-0 items-center justify-between gap-3 sm:justify-end">
               <StatusPill status={s.status} />
               <Button
                 variant="secondary"

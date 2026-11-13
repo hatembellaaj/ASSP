@@ -94,10 +94,10 @@ export default function JitsiRoom({
   }, [joinPath, displayName]);
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col bg-black">
-      <div className="flex items-center justify-between bg-slate-900 px-4 py-2 text-sm text-white">
-        <span className="truncate">En direct — {title}</span>
-        <button onClick={onClose} className="rounded bg-rose-600 px-3 py-1 hover:bg-rose-700">
+    <div className="fixed inset-0 z-[60] flex h-dvh flex-col bg-black">
+      <div className="flex shrink-0 items-center justify-between gap-3 bg-slate-900 px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] text-sm text-white sm:px-4">
+        <span className="min-w-0 truncate">En direct — {title}</span>
+        <button onClick={onClose} className="shrink-0 rounded bg-rose-600 px-4 py-2 font-medium hover:bg-rose-700 sm:px-3 sm:py-1">
           Quitter
         </button>
       </div>

@@ -19,20 +19,20 @@ export default function Dashboard() {
   return (
     <div>
       <PageHeader title="Tableau de bord" />
-      <div className="space-y-6 p-8">
-        <div className="flex items-center justify-between rounded-xl bg-gradient-to-r from-brand-700 to-brand-500 px-6 py-5 text-white">
+      <div className="space-y-6 p-4 sm:p-6 lg:p-8">
+        <div className="flex flex-col gap-4 rounded-xl bg-gradient-to-r from-brand-700 to-brand-500 px-5 py-5 text-white sm:flex-row sm:items-center sm:justify-between sm:px-6">
           <div>
-            <div className="text-sm text-brand-100">Bonjour, 👋</div>
+            <div className="text-sm text-brand-100">Bonjour{data.user?.firstName ? ` ${data.user.firstName}` : ""} 👋</div>
             <div className="text-lg font-semibold">
               Plan {data.user?.plan === "PREMIUM" ? "Premium" : "Standard"} — continuez comme ça !
             </div>
           </div>
-          <Link to="/seances" className="rounded-lg bg-white/15 px-4 py-2 text-sm font-medium hover:bg-white/25">
+          <Link to="/seances" className="self-start whitespace-nowrap rounded-lg bg-white/15 px-4 py-2 text-sm font-medium hover:bg-white/25 sm:self-auto">
             Réserver une séance →
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4">
           <StatCard icon="✅" label="Séances effectuées" value={data.stats.seancesEffectuees} />
           <StatCard icon="📅" label="Séances ce mois" value={data.stats.seancesCeMois} />
           <StatCard

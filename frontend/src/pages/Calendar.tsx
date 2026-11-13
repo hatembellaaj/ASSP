@@ -62,7 +62,7 @@ export default function CalendarPage() {
   return (
     <div>
       <PageHeader title="Mon calendrier" />
-      <div className="grid grid-cols-1 gap-6 p-8 lg:grid-cols-[1fr_320px]">
+      <div className="grid grid-cols-1 gap-6 p-4 sm:p-6 lg:p-8 lg:grid-cols-[1fr_320px]">
         <Card>
           <div className="mb-4 flex items-center justify-between">
             <button onClick={() => setCursor(new Date(year, month - 2, 1))} className="text-slate-400 hover:text-slate-700">←</button>
@@ -83,7 +83,7 @@ export default function CalendarPage() {
                   key={idx}
                   disabled={!d}
                   onClick={() => d && setSelected(String(d))}
-                  className={`h-16 rounded-lg border p-1 text-left text-xs transition ${
+                  className={`h-12 rounded-lg border p-1 text-left text-xs transition sm:h-16 ${
                     !d
                       ? "border-transparent"
                       : selected === String(d)
@@ -94,7 +94,19 @@ export default function CalendarPage() {
                   {d && <div className="font-medium text-slate-700">{d}</div>}
                   {hasSession && (
                     <div
-                      className="mt-1 truncate rounded px-1 py-0.5 text-[10px] font-medium text-white"
+                      className="mx-auto mt-1 h-2 w-2 rounded-full sm:hidden"
+                      style={{
+                        backgroundColor:
+                          daySessions[0].type === "GROUPE"
+                            ? "#a855f7"
+                            : DAY_STATUS_COLORS[daySessions[0].status] || "#94a3b8",
+                      }}
+                      aria-hidden="true"
+                    />
+                  )}
+                  {hasSession && (
+                    <div
+                      className="mt-1 hidden truncate rounded px-1 py-0.5 text-[10px] font-medium text-white sm:block"
                       style={{
                         backgroundColor:
                           daySessions[0].type === "GROUPE"

@@ -27,7 +27,7 @@ export default function Profile() {
   return (
     <div>
       <PageHeader title="Mon profil" />
-      <div className="mx-auto max-w-4xl space-y-6 p-8">
+      <div className="mx-auto max-w-4xl space-y-6 p-4 sm:p-6 lg:p-8">
         <Card className="flex items-center gap-4 bg-gradient-to-r from-brand-700 to-brand-500 text-white">
           <Avatar firstName={user.firstName} lastName={user.lastName} color="rgba(255,255,255,0.2)" size={56} />
           <div>

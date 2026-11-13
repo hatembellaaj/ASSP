@@ -1,15 +1,15 @@
 import type { ReactNode } from "react";
 
 export function Card({ children, className = "" }: { children: ReactNode; className?: string }) {
-  return <div className={`rounded-xl border border-slate-200 bg-white p-5 shadow-sm ${className}`}>{children}</div>;
+  return <div className={`rounded-xl border border-slate-200 bg-white p-4 shadow-sm sm:p-5 ${className}`}>{children}</div>;
 }
 
 export function StatCard({ icon, label, value, sub }: { icon: string; label: string; value: ReactNode; sub?: string }) {
   return (
-    <Card className="flex items-center gap-4">
-      <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-brand-50 text-lg">{icon}</div>
-      <div>
-        <div className="text-xl font-semibold text-slate-900">{value}</div>
+    <Card className="flex flex-col items-start gap-2 sm:flex-row sm:items-center sm:gap-4">
+      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-lg sm:h-10 sm:w-10">{icon}</div>
+      <div className="min-w-0">
+        <div className="text-lg font-semibold text-slate-900 sm:text-xl">{value}</div>
         <div className="text-xs text-slate-500">{label}</div>
         {sub && <div className="text-xs text-slate-400">{sub}</div>}
       </div>
@@ -58,7 +58,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export function StatusPill({ status }: { status: string }) {
   return (
-    <span className={`rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status] || "bg-slate-100 text-slate-600"}`}>
+    <span className={`shrink-0 whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ${STATUS_STYLES[status] || "bg-slate-100 text-slate-600"}`}>
       {STATUS_LABELS[status] || status}
     </span>
   );

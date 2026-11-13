@@ -30,7 +30,7 @@ export default function Program() {
           )
         }
       />
-      <div className="mx-auto max-w-3xl space-y-4 p-8">
+      <div className="mx-auto max-w-3xl space-y-4 p-4 sm:p-6 lg:p-8">
         {isLoading && <Loading />}
         {!isLoading && (!data || data.length === 0) && (
           <EmptyState icon="🗂️" title="Aucun parcours ne vous a encore été affecté." subtitle="Votre conseiller sportif vous attribuera bientôt un programme." />

@@ -21,7 +21,7 @@ export default function Health() {
   return (
     <div>
       <PageHeader title="Ma santé" />
-      <div className="mx-auto max-w-2xl p-8">
+      <div className="mx-auto max-w-2xl p-4 sm:p-6 lg:p-8">
         {isLoading && <Loading />}
         {!isLoading && !data && (
           <EmptyState icon="🤍" title="Bilan ICOPE non effectué" subtitle="Votre bilan de santé ICOPE sera disponible ici après évaluation par votre conseiller sportif." />

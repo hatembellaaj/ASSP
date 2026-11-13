@@ -12,7 +12,7 @@ export default function Coaches() {
   return (
     <div>
       <PageHeader title="Mes coachs" />
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
           <p className="text-sm text-slate-500">Choisissez un coach certifié pour vous accompagner.</p>
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">

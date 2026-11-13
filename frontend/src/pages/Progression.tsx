@@ -81,7 +81,7 @@ export default function Progression() {
   return (
     <div>
       <PageHeader title="Ma progression musculaire" />
-      <div className="p-8">
+      <div className="p-4 sm:p-6 lg:p-8">
         <div className="mb-6 rounded-xl bg-gradient-to-r from-purple-600 to-brand-500 px-6 py-4 text-white">
           <div className="text-xs text-purple-100">Tableau de progression</div>
           <div className="text-lg font-semibold">Mes muscles</div>
