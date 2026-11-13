@@ -111,6 +111,11 @@ export const sessionsTable = pgTable("sessions", {
   status: sessionStatusEnum("status").notNull().default("PLANIFIEE"),
   jitsiRoom: text("jitsi_room").notNull().unique(),
   notes: text("notes"),
+  // Intitulé du cours (ex : « Réveil du Corps »), facultatif
+  title: text("title"),
+  // Cours ouvert : les adhérents peuvent s'y inscrire eux-mêmes, dans la limite de `capacity` places
+  isOpen: boolean("is_open").notNull().default(false),
+  capacity: integer("capacity"),
   createdAt: createdAt(),
 });
 

@@ -9,7 +9,7 @@ import { useAuth } from "../context/AuthContext";
 import ScheduleSessionForm from "../components/ScheduleSessionForm";
 import JitsiRoom from "../components/JitsiRoom";
 import ParticipantPicker from "../components/ParticipantPicker";
-import { participantsFullList, participantsLabel, sessionParticipants } from "../utils/sessions";
+import { participantsFullList, participantsLabel, sessionParticipants, sessionTitle } from "../utils/sessions";
 
 /** Modification des participants d'une séance déjà planifiée. */
 function EditParticipants({ session, onDone }: { session: any; onDone: () => void }) {
@@ -26,13 +26,13 @@ function EditParticipants({ session, onDone }: { session: any; onDone: () => voi
   });
   return (
     <div className="mt-3 space-y-2 border-t border-slate-100 pt-3">
-      <ParticipantPicker value={memberIds} onChange={setMemberIds} />
+      <ParticipantPicker value={memberIds} onChange={setMemberIds} max={session.isOpen && session.capacity ? session.capacity : undefined} />
       {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>}
       <div className="flex justify-end gap-2">
         <Button variant="secondary" onClick={onDone}>
           Fermer
         </Button>
-        <Button disabled={save.isPending || memberIds.length === 0} onClick={() => save.mutate()}>
+        <Button disabled={save.isPending || (memberIds.length === 0 && !session.isOpen)} onClick={() => save.mutate()}>
           {save.isPending ? "Enregistrement…" : "Enregistrer les participants"}
         </Button>
       </div>
@@ -100,13 +100,20 @@ export default function CoachSpace() {
               <Card key={s.id}>
                 <div className="flex flex-wrap items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <div className="text-sm font-medium text-slate-800" title={participantsFullList(s)}>
-                      {participantsLabel(s)}
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium text-slate-800" title={participantsFullList(s)}>
+                        {sessionTitle(s)}
+                      </span>
+                      {s.isOpen && (
+                        <span className="whitespace-nowrap rounded-full bg-brand-50 px-2 py-0.5 text-xs font-medium text-brand-700">
+                          Ouvert · {participantsLabel(s)}
+                        </span>
+                      )}
                     </div>
                     <div className="text-xs text-slate-400">
                       {format(new Date(s.scheduledAt), "EEEE d MMMM à HH:mm", { locale: fr })} · {s.durationMin} min
                     </div>
-                    {sessionParticipants(s).length > 2 && (
+                    {(s.title || s.isOpen ? sessionParticipants(s).length > 0 : sessionParticipants(s).length > 2) && (
                       <div className="mt-1 text-xs text-slate-500">{participantsFullList(s)}</div>
                     )}
                   </div>
@@ -119,7 +126,7 @@ export default function CoachSpace() {
                       variant="ghost"
                       disabled={cancel.isPending}
                       onClick={() => {
-                        if (confirm(`Annuler la séance (${participantsLabel(s)}) ? Tous les participants seront concernés.`))
+                        if (confirm(`Annuler « ${sessionTitle(s)} » ? Tous les participants seront concernés.`))
                           cancel.mutate(s.id);
                       }}
                     >
@@ -127,7 +134,7 @@ export default function CoachSpace() {
                     </Button>
                     <Button
                       className="w-full sm:w-auto"
-                      onClick={() => setActive({ id: s.id, title: `Séance · ${participantsLabel(s)}` })}
+                      onClick={() => setActive({ id: s.id, title: sessionTitle(s) })}
                     >
                       Rejoindre
                     </Button>

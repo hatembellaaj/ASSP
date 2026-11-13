@@ -120,7 +120,7 @@
     <li>Qui fait quoi <small>Rôles et parcours d'une séance</small></li>
     <li>Administrateur <small>Créer les comptes, réinitialiser un mot de passe</small></li>
     <li>Coach <small>Planifier, lancer et annuler une séance</small></li>
-    <li>Adhérent <small>Se connecter et rejoindre sa séance</small></li>
+    <li>Adhérent <small>Créer son compte, s'inscrire à un cours, le rejoindre</small></li>
     <li>Pendant la visio <small>Boutons et bonnes pratiques</small></li>
     <li>Statuts des séances <small>Ce que signifie chaque statut</small></li>
     <li>Dépannage <small>Problèmes fréquents et solutions</small></li>
@@ -142,7 +142,7 @@
     <div class="role">
       <h4>Administrateur</h4>
       <div class="alias">Affiché « Programmateur »</div>
-      <p>Crée les comptes du coach et des adhérents, réinitialise les mots de passe.</p>
+      <p>Crée les comptes des coachs, réinitialise les mots de passe.</p>
       <div class="where">Menu : Utilisateurs</div>
     </div>
     <div class="role">
@@ -154,16 +154,16 @@
     <div class="role">
       <h4>Adhérent</h4>
       <div class="alias">La personne qui s'entraîne</div>
-      <p>Retrouve ses séances et les rejoint à l'heure prévue.</p>
-      <div class="where">Menu : Mes séances</div>
+      <p>Crée son compte, s'inscrit aux cours et les rejoint à l'heure prévue.</p>
+      <div class="where">Menu : Cours disponibles, Mes séances</div>
     </div>
   </div>
 
   <h3>Le parcours d'une séance</h3>
   <div class="flow-steps">
-    <div class="card"><div class="n">1</div><div class="who">Administrateur</div><p>Crée les comptes du coach et de l'adhérent et leur transmet leurs identifiants.</p></div>
-    <div class="card"><div class="n">2</div><div class="who">Coach</div><p>Planifie la séance : un ou plusieurs adhérents, date, heure, durée.</p></div>
-    <div class="card"><div class="n">3</div><div class="who">Adhérents</div><p>Chacun reçoit une notification ; la séance apparaît dans « Mes séances ».</p></div>
+    <div class="card"><div class="n">1</div><div class="who">Coach</div><p>Publie un cours ouvert : intitulé, date, heure, nombre de places.</p></div>
+    <div class="card"><div class="n">2</div><div class="who">Adhérent</div><p>Crée son compte sur le site, gratuitement, en une minute.</p></div>
+    <div class="card"><div class="n">3</div><div class="who">Adhérent</div><p>S'inscrit au cours dans « Cours disponibles », tant qu'il reste des places.</p></div>
     <div class="card"><div class="n">4</div><div class="who">Tous</div><p>À l'heure prévue, cliquent sur « Rejoindre » et se retrouvent en visio.</p></div>
   </div>
   <div class="note ok">
@@ -177,7 +177,7 @@
 <section>
   <div class="kicker">Partie 2</div>
   <h2>Administrateur : créer les comptes</h2>
-  <p class="lead">Seul l'administrateur peut créer un compte coach. L'inscription publique ne crée que des comptes adhérent.</p>
+  <p class="lead">Les adhérents créent eux-mêmes leur compte. L'administrateur crée les comptes des coachs et peut aussi créer un compte adhérent pour une personne peu à l'aise avec Internet.</p>
 
   <h3>Créer un compte</h3>
   <ol class="steps">
@@ -207,19 +207,19 @@
 <section>
   <div class="kicker">Partie 3</div>
   <h2>Coach : planifier et animer</h2>
-  <p class="lead">Le coach gère tout depuis l'<b>Espace Coach sportif</b>. Une séance réunit le coach et <b>1 à 20 adhérents</b> : un seul pour une séance individuelle, plusieurs pour un cours collectif.</p>
+  <p class="lead">Le coach gère tout depuis l'<b>Espace Coach sportif</b>. Deux types de séance : le <b>cours ouvert</b>, auquel les adhérents s'inscrivent eux-mêmes (2 à 20 places), et la <b>séance avec des adhérents choisis</b> par le coach.</p>
 
   <h3>Planifier une séance</h3>
   <ol class="steps">
-    <li>Ouvrez <span class="ui">Espace Coach sportif</span> dans le menu de gauche.</li>
-    <li>Cliquez sur <span class="ui">+ Planifier une séance</span> en haut à droite.</li>
-    <li>Cochez le ou les adhérents participants. Le champ de recherche aide à les retrouver, et le compteur indique le nombre de places utilisées (20 maximum). Si la liste est vide, demandez à l'administrateur de créer les comptes.</li>
-    <li>Indiquez la date, l'heure et la durée : 30, 45, 60, 75 ou 90 minutes.</li>
-    <li>Ajoutez si besoin une note pour les participants, par exemple « prévoir un tapis et une bouteille d'eau ».</li>
-    <li>Cliquez sur <span class="ui">Planifier</span>, ou <span class="ui">Planifier la séance de groupe</span> si plusieurs adhérents sont cochés.</li>
+    <li>Ouvrez <span class="ui">Espace Coach sportif</span>, puis cliquez sur <span class="ui">+ Planifier une séance</span>.</li>
+    <li>Choisissez <b>Cours ouvert aux inscriptions</b> (par défaut) ou <b>Séance avec des adhérents choisis</b>.</li>
+    <li>Cours ouvert : donnez un intitulé (par exemple « Réveil du Corps — niveau 1 ») et le nombre de places. Vous pouvez inscrire d'office quelques adhérents ; les autres s'inscriront eux-mêmes.</li>
+    <li>Séance avec des adhérents choisis : cochez le ou les participants (20 maximum).</li>
+    <li>Indiquez la date, l'heure, la durée (30 à 90 minutes) et, si besoin, une note pour les participants.</li>
+    <li>Cliquez sur <span class="ui">Publier le cours</span> ou <span class="ui">Planifier</span>.</li>
   </ol>
   <div class="note">
-    L'heure saisie est celle de votre ordinateur. Une date déjà passée est refusée. Chaque participant reçoit aussitôt une notification.
+    Un cours ouvert apparaît aussitôt dans « Cours disponibles » chez tous les adhérents. Vous recevez une notification à chaque inscription ou désinscription. L'heure saisie est celle de votre appareil ; une date passée est refusée.
   </div>
 
   <div class="three">
@@ -255,26 +255,36 @@
 <!-- 4 -->
 <section>
   <div class="kicker">Partie 4</div>
-  <h2>Adhérent : rejoindre sa séance</h2>
+  <h2>Adhérent : s'inscrire et participer</h2>
   <p class="lead">Rien à installer : un navigateur récent suffit, sur ordinateur, tablette ou téléphone.</p>
 
-  <div class="two">
+  <div class="three">
     <div>
-      <h3>Première connexion</h3>
+      <h3>Créer son compte</h3>
       <ol class="steps">
-        <li>Ouvrez <span class="url">https://mouvplus.com</span> (bien avec <b>https</b>).</li>
-        <li>Saisissez l'email et le mot de passe provisoire reçus de MouvPlus.</li>
-        <li>En cas d'oubli, demandez un nouveau mot de passe à l'administrateur.</li>
+        <li>Ouvrez <span class="url">mouvplus.com</span> et touchez <span class="ui">S'inscrire</span>.</li>
+        <li>Indiquez prénom, nom, email et un mot de passe de 8 caractères minimum.</li>
+        <li>Touchez <span class="ui">Créer mon compte</span> : vous arrivez sur les cours disponibles.</li>
       </ol>
+      <p>Lien direct à partager : <span class="url">mouvplus.com/inscription</span></p>
     </div>
     <div>
-      <h3>Rejoindre la séance</h3>
+      <h3>S'inscrire à un cours</h3>
       <ol class="steps">
-        <li>Ouvrez <span class="ui">Mes séances</span> dans le menu de gauche.</li>
-        <li>Repérez la séance avec votre coach : date, heure et durée sont indiquées. Pour un cours collectif, la mention « Groupe » et la liste des participants s'affichent.</li>
-        <li>À l'heure prévue, cliquez sur <span class="ui">Rejoindre</span>.</li>
+        <li>Ouvrez <span class="ui">Cours disponibles</span> dans le menu.</li>
+        <li>Choisissez un cours : date, coach et places restantes sont indiqués.</li>
+        <li>Touchez <span class="ui">S'inscrire</span>.</li>
+      </ol>
+      <p>Un empêchement ? <span class="ui">Se désinscrire</span>, jusqu'au début du cours, libère votre place.</p>
+    </div>
+    <div>
+      <h3>Rejoindre le cours</h3>
+      <ol class="steps">
+        <li>Ouvrez <span class="ui">Mes séances</span>.</li>
+        <li>À l'heure prévue, touchez <span class="ui">Rejoindre</span>.</li>
         <li>Autorisez la caméra et le micro.</li>
       </ol>
+      <p>Sur téléphone, le menu s'ouvre avec le bouton ☰ en haut à gauche.</p>
     </div>
   </div>
   <div class="note ok">
@@ -342,7 +352,8 @@
         <tr><td><b>« Vous avez été déconnecté »</b> en boucle</td><td>Connexion internet instable</td><td>Passez en Wi-Fi, rapprochez-vous de la box, rechargez.</td></tr>
         <tr><td><b>Chacun ne voit que sa propre caméra</b></td><td>Flux vidéo bloqué par un réseau ou un pare-feu</td><td>Essayez un autre réseau ; si tout le monde est touché, prévenez l'administrateur.</td></tr>
         <tr><td><b>Bouton « Rejoindre » grisé</b></td><td>Séance annulée</td><td>Contactez votre coach.</td></tr>
-        <tr><td><b>Liste d'adhérents vide</b> (coach)</td><td>Aucun compte adhérent créé</td><td>L'administrateur crée le compte dans <span class="ui">Utilisateurs</span>.</td></tr>
+        <tr><td><b>« Ce cours est complet »</b></td><td>Toutes les places sont prises</td><td>Choisissez un autre cours, ou demandez au coach d'ajouter des places.</td></tr>
+        <tr><td><b>« Un compte existe déjà »</b> à l'inscription</td><td>Email déjà utilisé</td><td>Connectez-vous ; en cas d'oubli, demandez un nouveau mot de passe à l'administrateur.</td></tr>
       </tbody>
     </table>
 </section>

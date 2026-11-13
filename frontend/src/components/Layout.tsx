@@ -13,6 +13,7 @@ const NAV_ITEMS: NavItem[] = [
   { to: "/communaute", label: "Communauté", icon: "💬" },
   { to: "/tableau-de-bord", label: "Tableau de bord", icon: "🏠", roles: ["MEMBRE"] },
   { to: "/calendrier", label: "Mon calendrier", icon: "📅" },
+  { to: "/cours", label: "Cours disponibles", icon: "🗓️", roles: ["MEMBRE"] },
   { to: "/seances", label: "Mes séances", icon: "🎥" },
   { to: "/programme", label: "Mon programme", icon: "🗂️", roles: ["MEMBRE"] },
   { to: "/progression", label: "Ma progression", icon: "📈", roles: ["MEMBRE"] },

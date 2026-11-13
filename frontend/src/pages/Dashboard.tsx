@@ -27,8 +27,8 @@ export default function Dashboard() {
               Plan {data.user?.plan === "PREMIUM" ? "Premium" : "Standard"} — continuez comme ça !
             </div>
           </div>
-          <Link to="/seances" className="self-start whitespace-nowrap rounded-lg bg-white/15 px-4 py-2 text-sm font-medium hover:bg-white/25 sm:self-auto">
-            Réserver une séance →
+          <Link to="/cours" className="self-start whitespace-nowrap rounded-lg bg-white/15 px-4 py-2 text-sm font-medium hover:bg-white/25 sm:self-auto">
+            S'inscrire à un cours →
           </Link>
         </div>
 

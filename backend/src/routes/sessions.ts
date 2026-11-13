@@ -54,16 +54,20 @@ router.get("/", requireAuth, async (req: AuthedRequest, res) => {
     .orderBy(desc(sessionsTable.scheduledAt));
 
   const participants = await participantsBySession(rows.map((r) => r.session.id));
+  const seesNames = isIntervenantRole(req.userRole) || req.userRole === "ADMIN";
 
   res.json(
     rows.map((r) => {
-      const list = participants.get(r.session.id) || [];
+      const all = participants.get(r.session.id) || [];
+      // Cours ouvert : un adhérent ne voit pas les noms des autres inscrits (confidentialité), seulement leur nombre.
+      const list = r.session.isOpen && !seesNames ? all.filter((p) => p.id === req.userId) : all;
       return {
         ...r.session,
         status: computeStatus(r.session.scheduledAt, r.session.durationMin, r.session.status),
         joinUrl: jitsiUrl(r.session.jitsiRoom),
         coach: r.coach,
         participants: list,
+        participantsCount: all.length,
         // Compatibilité : premier participant
         member: list[0] || null,
       };
@@ -95,19 +99,26 @@ router.get("/calendar", requireAuth, async (req: AuthedRequest, res) => {
       ...r.session,
       status: computeStatus(r.session.scheduledAt, r.session.durationMin, r.session.status),
       coach: r.coach,
-      participants: participants.get(r.session.id) || [],
+      participants:
+        r.session.isOpen && !isIntervenantRole(req.userRole) && req.userRole !== "ADMIN"
+          ? (participants.get(r.session.id) || []).filter((p) => p.id === req.userId)
+          : participants.get(r.session.id) || [],
     }))
   );
 });
 
 const createSchema = z.object({
-  memberIds: z.array(z.string()).min(1).max(MAX_PARTICIPANTS).optional(),
+  memberIds: z.array(z.string()).max(MAX_PARTICIPANTS).optional(),
   // Ancien format (un seul adhérent), toujours accepté
   memberId: z.string().optional(),
   coachId: z.string().optional(),
   scheduledAt: z.string().refine((v) => !Number.isNaN(Date.parse(v)), "Date invalide"),
   durationMin: z.number().int().min(15).max(180).optional(),
   notes: z.string().max(2000).optional(),
+  title: z.string().trim().max(120).optional(),
+  // Cours ouvert aux inscriptions des adhérents, avec un nombre de places
+  isOpen: z.boolean().optional(),
+  capacity: z.number().int().min(1).max(MAX_PARTICIPANTS).optional(),
 });
 
 // Planifier une séance.
@@ -120,20 +131,26 @@ router.post("/", requireAuth, async (req: AuthedRequest, res) => {
   const body = parsed.data;
 
   const isMembre = req.userRole === "MEMBRE";
+  // Seuls le coach et l'admin ouvrent un cours aux inscriptions
+  const isOpen = !isMembre && !!body.isOpen;
+  const capacity = isOpen ? body.capacity ?? 10 : null;
   const coachId = isIntervenantRole(req.userRole) ? req.userId! : body.coachId;
   const memberIds = isMembre
     ? [req.userId!]
     : [...new Set(body.memberIds || (body.memberId ? [body.memberId] : []))];
   if (!coachId) return res.status(400).json({ error: "Coach requis" });
-  if (memberIds.length === 0) return res.status(400).json({ error: "Choisissez au moins un adhérent" });
+  if (memberIds.length === 0 && !isOpen) return res.status(400).json({ error: "Choisissez au moins un adhérent" });
   if (memberIds.length > MAX_PARTICIPANTS) {
     return res.status(400).json({ error: `${MAX_PARTICIPANTS} participants maximum par séance` });
+  }
+  if (capacity !== null && memberIds.length > capacity) {
+    return res.status(400).json({ error: `Plus d'adhérents choisis (${memberIds.length}) que de places (${capacity})` });
   }
 
   const [coach] = await db.select().from(users).where(eq(users.id, coachId)).limit(1);
   if (!coach || !isIntervenantRole(coach.role)) return res.status(400).json({ error: "Coach introuvable" });
 
-  const members = await db.select().from(users).where(inArray(users.id, memberIds));
+  const members = memberIds.length ? await db.select().from(users).where(inArray(users.id, memberIds)) : [];
   if (members.length !== memberIds.length || members.some((m) => m.role !== "MEMBRE")) {
     return res.status(400).json({ error: "Adhérent introuvable" });
   }
@@ -151,15 +168,19 @@ router.post("/", requireAuth, async (req: AuthedRequest, res) => {
         id: newId(),
         coachId,
         memberId: null,
-        type: memberIds.length > 1 ? "GROUPE" : "INDIVIDUEL",
+        type: isOpen || memberIds.length > 1 ? "GROUPE" : "INDIVIDUEL",
         scheduledAt,
         durationMin: body.durationMin || 45,
         status: isMembre ? "A_CONFIRMER" : "PLANIFIEE",
         jitsiRoom: room,
         notes: body.notes,
+        title: body.title || null,
+        isOpen,
+        capacity,
       })
       .returning();
 
+    if (memberIds.length === 0) return created;
     await tx.insert(sessionParticipants).values(memberIds.map((memberId) => ({ sessionId: created.id, memberId })));
 
     await tx.insert(notifications).values(
@@ -181,7 +202,7 @@ router.post("/", requireAuth, async (req: AuthedRequest, res) => {
   res.status(201).json({ ...session, participants, joinUrl: jitsiUrl(room) });
 });
 
-const participantsSchema = z.object({ memberIds: z.array(z.string()).min(1).max(MAX_PARTICIPANTS) });
+const participantsSchema = z.object({ memberIds: z.array(z.string()).max(MAX_PARTICIPANTS) });
 
 // Modifier la liste des participants (coach de la séance ou admin).
 router.put("/:id/participants", requireAuth, async (req: AuthedRequest, res) => {
@@ -197,8 +218,15 @@ router.put("/:id/participants", requireAuth, async (req: AuthedRequest, res) => 
     return res.status(403).json({ error: "Action non autorisée" });
   }
   if (session.status === "ANNULEE") return res.status(409).json({ error: "Séance annulée" });
+  // Un cours ouvert peut rester sans inscrit ; une séance fermée garde au moins un adhérent.
+  if (memberIds.length === 0 && !session.isOpen) {
+    return res.status(400).json({ error: "Gardez au moins un adhérent" });
+  }
+  if (session.isOpen && session.capacity && memberIds.length > session.capacity) {
+    return res.status(400).json({ error: `Ce cours est limité à ${session.capacity} places` });
+  }
 
-  const members = await db.select().from(users).where(inArray(users.id, memberIds));
+  const members = memberIds.length ? await db.select().from(users).where(inArray(users.id, memberIds)) : [];
   if (members.length !== memberIds.length || members.some((m) => m.role !== "MEMBRE")) {
     return res.status(400).json({ error: "Adhérent introuvable" });
   }
@@ -212,10 +240,12 @@ router.put("/:id/participants", requireAuth, async (req: AuthedRequest, res) => 
   const [coach] = await db.select().from(users).where(eq(users.id, session.coachId)).limit(1);
   await db.transaction(async (tx) => {
     await tx.delete(sessionParticipants).where(eq(sessionParticipants.sessionId, session.id));
-    await tx.insert(sessionParticipants).values(memberIds.map((memberId) => ({ sessionId: session.id, memberId })));
+    if (memberIds.length) {
+      await tx.insert(sessionParticipants).values(memberIds.map((memberId) => ({ sessionId: session.id, memberId })));
+    }
     await tx
       .update(sessionsTable)
-      .set({ type: memberIds.length > 1 ? "GROUPE" : "INDIVIDUEL", memberId: null })
+      .set({ type: session.isOpen || memberIds.length > 1 ? "GROUPE" : "INDIVIDUEL", memberId: null })
       .where(eq(sessionsTable.id, session.id));
     if (added.length > 0) {
       await tx.insert(notifications).values(
@@ -232,6 +262,105 @@ router.put("/:id/participants", requireAuth, async (req: AuthedRequest, res) => 
   res.json({ id: session.id, participants });
 });
 
+/** Un cours accepte encore des inscriptions : ouvert, non annulé, pas encore terminé. */
+function acceptsEnrollment(s: typeof sessionsTable.$inferSelect): boolean {
+  return s.isOpen && s.status !== "ANNULEE" && s.status !== "EFFECTUEE" && s.scheduledAt.getTime() + s.durationMin * 60000 > Date.now();
+}
+
+// Cours ouverts aux inscriptions (catalogue vu par les adhérents).
+router.get("/available", requireAuth, async (req: AuthedRequest, res) => {
+  const rows = await db
+    .select({
+      session: sessionsTable,
+      coach: { id: coachAlias.id, firstName: coachAlias.firstName, lastName: coachAlias.lastName },
+    })
+    .from(sessionsTable)
+    .leftJoin(coachAlias, eq(sessionsTable.coachId, coachAlias.id))
+    .where(and(eq(sessionsTable.isOpen, true), gte(sessionsTable.scheduledAt, new Date(Date.now() - 3 * 3600000))))
+    .orderBy(asc(sessionsTable.scheduledAt));
+
+  const open = rows.filter((r) => acceptsEnrollment(r.session));
+  const participants = await participantsBySession(open.map((r) => r.session.id));
+
+  res.json(
+    open.map((r) => {
+      const list = participants.get(r.session.id) || [];
+      return {
+        id: r.session.id,
+        title: r.session.title,
+        notes: r.session.notes,
+        scheduledAt: r.session.scheduledAt,
+        durationMin: r.session.durationMin,
+        status: computeStatus(r.session.scheduledAt, r.session.durationMin, r.session.status),
+        capacity: r.session.capacity,
+        placesTaken: list.length,
+        enrolled: list.some((p) => p.id === req.userId),
+        coach: r.coach,
+      };
+    })
+  );
+});
+
+// S'inscrire à un cours ouvert (adhérent).
+router.post("/:id/enroll", requireAuth, async (req: AuthedRequest, res) => {
+  if (req.userRole !== "MEMBRE") return res.status(403).json({ error: "Réservé aux adhérents" });
+
+  const result = await db.transaction(async (tx) => {
+    // Verrou sur la séance : deux inscriptions simultanées ne peuvent pas dépasser la capacité.
+    const [session] = await tx
+      .select()
+      .from(sessionsTable)
+      .where(eq(sessionsTable.id, req.params.id))
+      .for("update")
+      .limit(1);
+    if (!session) return { code: 404, error: "Cours introuvable" } as const;
+    if (!acceptsEnrollment(session)) return { code: 409, error: "Les inscriptions à ce cours sont fermées" } as const;
+
+    const current = await tx
+      .select({ memberId: sessionParticipants.memberId })
+      .from(sessionParticipants)
+      .where(eq(sessionParticipants.sessionId, session.id));
+    if (current.some((c) => c.memberId === req.userId)) return { code: 409, error: "Vous êtes déjà inscrit" } as const;
+    if (session.capacity && current.length >= session.capacity) {
+      return { code: 409, error: "Ce cours est complet" } as const;
+    }
+
+    await tx.insert(sessionParticipants).values({ sessionId: session.id, memberId: req.userId! });
+    const [me] = await tx.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+    await tx.insert(notifications).values({
+      id: newId(),
+      userId: session.coachId,
+      message: `Nouvelle inscription : ${me.firstName} ${me.lastName}, cours${session.title ? ` « ${session.title} »` : " collectif"}`,
+    });
+    return { code: 201, placesTaken: current.length + 1, capacity: session.capacity } as const;
+  });
+
+  if ("error" in result) return res.status(result.code).json({ error: result.error });
+  res.status(201).json({ enrolled: true, placesTaken: result.placesTaken, capacity: result.capacity });
+});
+
+// Se désinscrire d'un cours ouvert (adhérent), tant qu'il n'a pas commencé.
+router.delete("/:id/enroll", requireAuth, async (req: AuthedRequest, res) => {
+  const [session] = await db.select().from(sessionsTable).where(eq(sessionsTable.id, req.params.id)).limit(1);
+  if (!session) return res.status(404).json({ error: "Cours introuvable" });
+  if (!session.isOpen) return res.status(409).json({ error: "Contactez votre coach pour quitter cette séance" });
+  if (session.scheduledAt.getTime() <= Date.now()) {
+    return res.status(409).json({ error: "Le cours a déjà commencé" });
+  }
+  if (!(await isParticipant(session.id, req.userId!))) return res.status(404).json({ error: "Vous n'êtes pas inscrit" });
+
+  await db
+    .delete(sessionParticipants)
+    .where(and(eq(sessionParticipants.sessionId, session.id), eq(sessionParticipants.memberId, req.userId!)));
+  const [me] = await db.select().from(users).where(eq(users.id, req.userId!)).limit(1);
+  await db.insert(notifications).values({
+    id: newId(),
+    userId: session.coachId,
+    message: `Désinscription : ${me.firstName} ${me.lastName}, cours${session.title ? ` « ${session.title} »` : " collectif"}`,
+  });
+  res.json({ enrolled: false });
+});
+
 const STATUSES = ["PLANIFIEE", "A_CONFIRMER", "EFFECTUEE", "ANNULEE"] as const;
 
 router.patch("/:id/status", requireAuth, async (req: AuthedRequest, res) => {
@@ -245,7 +374,8 @@ router.patch("/:id/status", requireAuth, async (req: AuthedRequest, res) => {
   // Le coach et l'admin peuvent tout changer. Un adhérent peut seulement annuler
   // une séance dont il est l'unique participant (pas une séance de groupe).
   let allowed = isCoach || req.userRole === "ADMIN";
-  if (!allowed && status === "ANNULEE" && (await isParticipant(existing.id, req.userId!))) {
+  // (Pour un cours ouvert, l'adhérent se désinscrit au lieu d'annuler le cours.)
+  if (!allowed && status === "ANNULEE" && !existing.isOpen && (await isParticipant(existing.id, req.userId!))) {
     const all = await db
       .select({ memberId: sessionParticipants.memberId })
       .from(sessionParticipants)

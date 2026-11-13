@@ -79,6 +79,12 @@ s'affiche une fois ; « Réinitialiser le mot de passe » en génère un nouveau
 séances visio depuis **Espace Coach sportif → + Planifier une séance** ; elles apparaissent chez l'adhérent dans
 « Mes séances » avec le bouton « Rejoindre ».
 
+**Inscription publique** : tout visiteur peut créer un compte sur `/inscription` (ou « S'inscrire » sur l'accueil).
+Le compte créé est toujours un *Adhérent* (rôle forcé côté serveur) ; il arrive sur **Cours disponibles**, où il
+s'inscrit aux **cours ouverts** publiés par les coachs (`sessions.is_open`, `capacity` de 1 à 20 places,
+`POST/DELETE /api/sessions/:id/enroll`, capacité garantie par un verrou `FOR UPDATE`). Un adhérent ne voit pas
+les noms des autres inscrits d'un cours ouvert.
+
 Une séance réunit un coach et **1 à 20 adhérents** (table `session_participants`) : un seul pour une séance
 individuelle, plusieurs pour un cours collectif. Le bouton **Participants** permet d'en ajouter ou d'en retirer.
 Seuls les inscrits, le coach et l'admin obtiennent un jeton d'accès à la salle ; le coach est le seul modérateur.

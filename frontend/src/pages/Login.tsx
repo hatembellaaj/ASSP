@@ -11,16 +11,52 @@ const TEAL = "#3f5452";
 const BODY = "#5b6462";
 const CARD_BG = "#f2f6f5";
 
-export default function Login() {
-  const { user, login } = useAuth();
+export default function Login({ initialView = "home" }: { initialView?: "home" | "login" | "register" }) {
+  const { user, login, register } = useAuth();
   const navigate = useNavigate();
-  const [view, setView] = useState<"home" | "login">("home");
+  const [view, setView] = useState<"home" | "login" | "register">(initialView);
+  const [justRegistered, setJustRegistered] = useState(false);
+  const [signup, setSignup] = useState({ firstName: "", lastName: "", email: "", phone: "", password: "", confirm: "" });
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
-  if (user) return <Navigate to="/" replace />;
+  // Après une inscription, on emmène directement l'adhérent vers les cours disponibles.
+  if (user) return <Navigate to={justRegistered ? "/cours" : "/"} replace />;
+
+  const goTo = (v: "home" | "login" | "register") => {
+    setError(null);
+    setView(v);
+    window.scrollTo(0, 0);
+  };
+
+  async function handleRegister(e: FormEvent) {
+    e.preventDefault();
+    setError(null);
+    if (signup.password.length < 8) return setError("Le mot de passe doit faire au moins 8 caractères");
+    if (signup.password !== signup.confirm) return setError("Les deux mots de passe ne correspondent pas");
+    setLoading(true);
+    setJustRegistered(true);
+    try {
+      await register({
+        firstName: signup.firstName,
+        lastName: signup.lastName,
+        email: signup.email,
+        phone: signup.phone || undefined,
+        password: signup.password,
+      });
+    } catch (err: any) {
+      setJustRegistered(false);
+      const msg = err?.response?.data?.error;
+      setError(typeof msg === "string" ? msg : "Inscription impossible");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const field =
+    "w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none";
 
   async function handleSubmit(e: FormEvent) {
     e.preventDefault();
@@ -41,18 +77,28 @@ export default function Login() {
       <header className="mx-auto flex max-w-5xl items-center justify-between px-6 py-6">
         <img src={asspLogo} alt="ASSP — Association des Sportifs Séniors de Pauillac" className="h-16 w-auto" />
         {view === "home" ? (
-          <button
-            type="button"
-            onClick={() => setView("login")}
-            className="rounded-full border px-4 py-1.5 text-sm font-medium transition hover:bg-slate-50"
-            style={{ borderColor: TEAL, color: TEAL }}
-          >
-            Connexion
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => goTo("login")}
+              className="rounded-full border px-4 py-1.5 text-sm font-medium transition hover:bg-slate-50"
+              style={{ borderColor: TEAL, color: TEAL }}
+            >
+              Connexion
+            </button>
+            <button
+              type="button"
+              onClick={() => goTo("register")}
+              className="rounded-full px-4 py-1.5 text-sm font-medium text-white transition hover:opacity-90"
+              style={{ backgroundColor: TEAL }}
+            >
+              S'inscrire
+            </button>
+          </div>
         ) : (
           <button
             type="button"
-            onClick={() => setView("home")}
+            onClick={() => goTo("home")}
             className="text-sm font-medium hover:underline"
             style={{ color: TEAL }}
           >
@@ -161,8 +207,104 @@ export default function Login() {
             </p>
           </div>
 
-          <div className="mt-10 flex justify-center">
-            <Button onClick={() => setView("login")}>Accéder à mon espace →</Button>
+          <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button onClick={() => goTo("register")} className="w-full sm:w-auto">
+              Créer mon compte et m'inscrire à un cours
+            </Button>
+            <Button variant="secondary" onClick={() => goTo("login")} className="w-full sm:w-auto">
+              J'ai déjà un compte
+            </Button>
+          </div>
+        </main>
+      ) : view === "register" ? (
+        <main className="flex justify-center px-4 pb-16 sm:px-6">
+          <div className="w-full max-w-md rounded-2xl border border-slate-100 p-6 shadow-sm sm:p-8">
+            <h1 className="mb-1 text-xl font-semibold text-slate-900">Créer mon compte</h1>
+            <p className="mb-6 text-sm text-slate-500">
+              Gratuit. Vous pourrez ensuite vous inscrire aux cours proposés par nos coachs.
+            </p>
+            <form onSubmit={handleRegister} className="space-y-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Prénom</label>
+                  <input
+                    required
+                    autoComplete="given-name"
+                    value={signup.firstName}
+                    onChange={(e) => setSignup({ ...signup, firstName: e.target.value })}
+                    className={field}
+                  />
+                </div>
+                <div>
+                  <label className="mb-1 block text-sm font-medium text-slate-700">Nom</label>
+                  <input
+                    required
+                    autoComplete="family-name"
+                    value={signup.lastName}
+                    onChange={(e) => setSignup({ ...signup, lastName: e.target.value })}
+                    className={field}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Email</label>
+                <input
+                  type="email"
+                  required
+                  autoComplete="email"
+                  value={signup.email}
+                  onChange={(e) => setSignup({ ...signup, email: e.target.value })}
+                  className={field}
+                  placeholder="vous@exemple.fr"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">
+                  Téléphone <span className="font-normal text-slate-400">(facultatif)</span>
+                </label>
+                <input
+                  type="tel"
+                  autoComplete="tel"
+                  value={signup.phone}
+                  onChange={(e) => setSignup({ ...signup, phone: e.target.value })}
+                  className={field}
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Mot de passe</label>
+                <input
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  value={signup.password}
+                  onChange={(e) => setSignup({ ...signup, password: e.target.value })}
+                  className={field}
+                  placeholder="8 caractères minimum"
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-medium text-slate-700">Confirmer le mot de passe</label>
+                <input
+                  type="password"
+                  required
+                  autoComplete="new-password"
+                  value={signup.confirm}
+                  onChange={(e) => setSignup({ ...signup, confirm: e.target.value })}
+                  className={field}
+                />
+              </div>
+              {error && <div className="rounded-lg bg-rose-50 px-3 py-2 text-sm text-rose-600">{error}</div>}
+              <Button type="submit" disabled={loading} className="w-full">
+                {loading ? "Création du compte…" : "Créer mon compte"}
+              </Button>
+            </form>
+            <p className="mt-6 text-center text-sm text-slate-500">
+              Déjà inscrit ?{" "}
+              <button type="button" onClick={() => goTo("login")} className="font-medium text-brand-600 hover:underline">
+                Se connecter
+              </button>
+            </p>
           </div>
         </main>
       ) : (
@@ -198,6 +340,12 @@ export default function Login() {
                 {loading ? "Connexion…" : "Se connecter"}
               </Button>
             </form>
+            <p className="mt-6 text-center text-sm text-slate-500">
+              Pas encore de compte ?{" "}
+              <button type="button" onClick={() => goTo("register")} className="font-medium text-brand-600 hover:underline">
+                Créer mon compte
+              </button>
+            </p>
 
           </div>
         </main>

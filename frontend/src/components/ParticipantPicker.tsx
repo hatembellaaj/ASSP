@@ -15,9 +15,12 @@ export interface MemberOption {
 export default function ParticipantPicker({
   value,
   onChange,
+  max = MAX_PARTICIPANTS,
 }: {
   value: string[];
   onChange: (ids: string[]) => void;
+  /** Nombre maximum d'adhérents cochables (places du cours) */
+  max?: number;
 }) {
   const [search, setSearch] = useState("");
   const { data: members, isLoading } = useQuery({
@@ -34,13 +37,13 @@ export default function ParticipantPicker({
     return list.filter((m) => `${m.firstName} ${m.lastName} ${m.email}`.toLowerCase().includes(q));
   }, [members, search]);
 
-  const full = value.length >= MAX_PARTICIPANTS;
+  const full = value.length >= max;
   const toggle = (id: string) =>
     onChange(value.includes(id) ? value.filter((v) => v !== id) : full ? value : [...value, id]);
 
   if (isLoading) return <p className="text-sm text-slate-400">Chargement des adhérents…</p>;
   if (!members?.length) {
-    return <p className="text-xs text-amber-600">Aucun adhérent : l'administrateur doit d'abord créer leurs comptes.</p>;
+    return <p className="text-xs text-slate-500">Aucun adhérent inscrit sur le site pour le moment.</p>;
   }
 
   return (
@@ -53,7 +56,7 @@ export default function ParticipantPicker({
           className="w-full text-sm focus:outline-none"
         />
         <span className={`whitespace-nowrap text-xs ${full ? "font-semibold text-amber-600" : "text-slate-500"}`}>
-          {value.length} / {MAX_PARTICIPANTS}
+          {value.length} / {max}
         </span>
       </div>
       <ul className="max-h-56 overflow-y-auto py-1">

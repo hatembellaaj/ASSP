@@ -5,6 +5,7 @@ import Dashboard from "./pages/Dashboard";
 import Community from "./pages/Community";
 import CalendarPage from "./pages/Calendar";
 import Sessions from "./pages/Sessions";
+import Courses from "./pages/Courses";
 import Program from "./pages/Program";
 import Progression from "./pages/Progression";
 import Health from "./pages/Health";
@@ -33,12 +34,14 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/inscription" element={<Login initialView="register" />} />
       <Route element={<Layout />}>
         <Route path="/" element={<HomeRedirect />} />
         <Route path="/communaute" element={<Community />} />
         <Route path="/tableau-de-bord" element={<Dashboard />} />
         <Route path="/calendrier" element={<CalendarPage />} />
         <Route path="/seances" element={<Sessions />} />
+        <Route path="/cours" element={<Courses />} />
         <Route path="/programme" element={<Program />} />
         <Route path="/progression" element={<Progression />} />
         <Route path="/sante" element={<Health />} />
